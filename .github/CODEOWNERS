@@ -1,0 +1,22 @@
+# Code owners for automatic review assignment
+
+# Global owners
+* @vrixo/core-team
+
+# Backend
+/backend/ @vrixo/backend-team @vrixo/core-team
+
+# Frontend
+/frontend/ @vrixo/frontend-team @vrixo/core-team
+
+# E2E Tests
+/e2e/ @vrixo/qa-team
+
+# Infrastructure
+/infra/ @vrixo/devops-team
+/.github/ @vrixo/devops-team
+/scripts/ @vrixo/devops-team
+
+# Documentation
+/*.md @vrixo/core-team
+/docs/ @vrixo/core-team

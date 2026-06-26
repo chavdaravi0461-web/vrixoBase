@@ -1,0 +1,18 @@
+{
+  "name": "vrixobase-e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VrixoBase Playwright E2E Tests",
+  "scripts": {
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
+    "test:e2e:debug": "npx playwright test --debug",
+    "test:e2e:report": "npx playwright show-report reports/html",
+    "setup": "npx playwright install chromium",
+    "pretest:e2e": "node -e \"require('dotenv').config({path:'.env.test'})\""
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "dotenv": "^16.4.0"
+  }
+}

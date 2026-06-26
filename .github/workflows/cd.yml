@@ -1,0 +1,199 @@
+name: CD Pipeline
+on:
+  workflow_run:
+    workflows: [CI Pipeline]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+      ref:
+        description: Git ref (commit SHA or branch)
+        required: false
+        default: main
+        type: string
+
+concurrency:
+  group: cd-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_BACKEND: ${{ github.repository }}/backend
+  IMAGE_FRONTEND: ${{ github.repository }}/frontend
+  K8S_NAMESPACE: vrixo
+
+jobs:
+  deploy-staging:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event_name != 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.vrixobase.com
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Extract commit SHA
+        id: vars
+        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.30.0
+
+      - name: Configure Kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Deploy backend
+        run: |
+          kubectl set image deployment/backend \
+            backend=${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}:${{ steps.vars.outputs.sha }} \
+            -n ${{ env.K8S_NAMESPACE }} --record
+          kubectl rollout status deployment/backend -n ${{ env.K8S_NAMESPACE }} --timeout=5m
+
+      - name: Deploy frontend
+        run: |
+          kubectl set image deployment/frontend \
+            frontend=${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}:${{ steps.vars.outputs.sha }} \
+            -n ${{ env.K8S_NAMESPACE }} --record
+          kubectl rollout status deployment/frontend -n ${{ env.K8S_NAMESPACE }} --timeout=5m
+
+      - name: Health check
+        run: |
+          for i in $(seq 1 12); do
+            STATUS=$(curl -so /dev/null -w '%{http_code}' https://staging.vrixobase.com/api/health)
+            if [ "$STATUS" = "200" ]; then
+              echo "Staging health check passed"
+              exit 0
+            fi
+            echo "Attempt $i: got status $STATUS, retrying..."
+            sleep 5
+          done
+          echo "Health check failed after 60s"
+          exit 1
+
+      - name: Run smoke tests
+        run: |
+          curl -sf https://staging.vrixobase.com/api/health/liveness > /dev/null
+          curl -sf https://staging.vrixobase.com/api/health/readiness > /dev/null
+          echo "Smoke tests passed"
+
+  deploy-production:
+    needs: [deploy-staging]
+    if: success()
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://vrixobase.com
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Extract commit SHA
+        id: vars
+        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.30.0
+
+      - name: Configure Kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Deploy backend
+        run: |
+          kubectl set image deployment/backend \
+            backend=${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}:${{ steps.vars.outputs.sha }} \
+            -n ${{ env.K8S_NAMESPACE }} --record
+          kubectl rollout status deployment/backend -n ${{ env.K8S_NAMESPACE }} --timeout=5m
+
+      - name: Deploy frontend
+        run: |
+          kubectl set image deployment/frontend \
+            frontend=${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}:${{ steps.vars.outputs.sha }} \
+            -n ${{ env.K8S_NAMESPACE }} --record
+          kubectl rollout status deployment/frontend -n ${{ env.K8S_NAMESPACE }} --timeout=5m
+
+      - name: Health check
+        run: |
+          for i in $(seq 1 12); do
+            STATUS=$(curl -so /dev/null -w '%{http_code}' https://vrixobase.com/api/health)
+            if [ "$STATUS" = "200" ]; then
+              echo "Production health check passed"
+              exit 0
+            fi
+            echo "Attempt $i: got status $STATUS, retrying..."
+            sleep 5
+          done
+          echo "Health check failed after 60s"
+          exit 1
+
+      - name: Run Prisma migrations
+        run: |
+          kubectl exec -n ${{ env.K8S_NAMESPACE }} deployment/backend -- \
+            npx prisma migrate deploy
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+
+      - name: Verify deployment
+        run: |
+          curl -sf https://vrixobase.com/api/health/liveness > /dev/null
+          curl -sf https://vrixobase.com/api/health/readiness > /dev/null
+          curl -sf https://vrixobase.com/api/health/startup > /dev/null
+          echo "All health endpoints verified"
+
+  rollback:
+    needs: [deploy-production]
+    if: failure()
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.30.0
+      - name: Configure Kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+      - name: Rollback to previous revision
+        run: |
+          kubectl rollout undo deployment/backend -n ${{ env.K8S_NAMESPACE }}
+          kubectl rollout status deployment/backend -n ${{ env.K8S_NAMESPACE }} --timeout=5m
+          kubectl rollout undo deployment/frontend -n ${{ env.K8S_NAMESPACE }}
+          kubectl rollout status deployment/frontend -n ${{ env.K8S_NAMESPACE }} --timeout=5m
+      - name: Verify rollback health
+        run: |
+          for i in $(seq 1 12); do
+            STATUS=$(curl -so /dev/null -w '%{http_code}' https://vrixobase.com/api/health)
+            if [ "$STATUS" = "200" ]; then
+              echo "Rollback health check passed"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Rollback verification failed"
+          exit 1

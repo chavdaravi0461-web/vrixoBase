@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vrixo
+  labels:
+    name: vrixo
+    environment: production
+    managed-by: vrixo-platform

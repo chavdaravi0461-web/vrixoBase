@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2022",
+    "sourceMap": true,
+    "outDir": "./build",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@common/*": ["src/common/*"],
+      "@auth/*": ["src/modules/auth/*"],
+      "@database/*": ["src/modules/database/*"],
+      "@storage/*": ["src/modules/storage/*"],
+      "@realtime/*": ["src/modules/realtime/*"],
+      "@functions/*": ["src/modules/functions/*"],
+      "@monitoring/*": ["src/modules/monitoring/*"],
+      "@security/*": ["src/modules/security/*"],
+      "@project/*": ["src/modules/project/*"],
+      "@team/*": ["src/modules/team/*"],
+      "@audit/*": ["src/modules/audit/*"],
+      "@health/*": ["src/modules/health/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

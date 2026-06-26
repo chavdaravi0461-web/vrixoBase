@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vrixo-backend
+  namespace: vrixo
+  labels:
+    app: vrixo
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vrixo-backend-role
+  namespace: vrixo
+  labels:
+    app: vrixo
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["create", "get", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vrixo-backend-binding
+  namespace: vrixo
+  labels:
+    app: vrixo
+subjects:
+  - kind: ServiceAccount
+    name: vrixo-backend
+    namespace: vrixo
+roleRef:
+  kind: Role
+  name: vrixo-backend-role
+  apiGroup: rbac.authorization.k8s.io

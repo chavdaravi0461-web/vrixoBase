@@ -1,0 +1,24 @@
+@echo off
+SET NODE_ENV=development
+SET PORT=4001
+SET DATABASE_URL=postgresql://vrixo:vrixo_secret@localhost:5433/vrixo
+SET JWT_ACCESS_SECRET=audit-test-jwt-access-secret-2026
+SET JWT_REFRESH_SECRET=audit-test-jwt-refresh-secret-2026
+SET JWT_ACCESS_EXPIRES_IN=24h
+SET JWT_REFRESH_EXPIRES_IN=365d
+SET JWT_ISSUER=vrixo-audit-2026
+SET API_PREFIX=api
+SET CORS_ORIGINS=http://localhost:3000
+SET MINIO_ENDPOINT=localhost
+SET MINIO_PORT=9000
+SET MINIO_ACCESS_KEY=vrixo_admin
+SET MINIO_SECRET_KEY=vrixo_minio_secret
+SET MINIO_USE_SSL=false
+SET REDIS_HOST=localhost
+SET REDIS_PORT=6379
+SET THROTTLE_TTL=60
+SET THROTTLE_LIMIT=1000
+SET ENCRYPTION_KEY=audit-test-key-32bytes-long-encrypt!
+SET ENCRYPTION_SALT=audit-test-salt
+cd /d C:\vrixoBase\backend
+node build\main.js

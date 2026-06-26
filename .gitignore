@@ -1,0 +1,70 @@
+# Node modules (monorepo)
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+packages/*/node_modules/
+
+# Build
+build/
+backend/build/
+dist/
+.next/
+frontend/.next/
+out/
+frontend/out/
+
+# Turbo
+.turbo/
+
+# Coverage
+coverage/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Logs
+*.log
+
+# Env
+.env
+.env.local
+.env.production
+.env.development
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build info
+*.tsbuildinfo
+
+# Docker data
+pgdata/
+redisdata/
+miniodata/
+
+# App runtime
+backend_uploads/
+
+# Monorepo
+backend/build/
+frontend/.next/
+frontend/out/
+
+backend/node_modules/
+frontend/node_modules/
+packages/*/node_modules/
+
+# Generated libraries
+packages/*/lib/
+
+# Test reports
+e2e/reports/
+backend/load-tests/results/
+
+# Backups
+backups/
+
+# Runtime logs
+*.err

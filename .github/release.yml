@@ -1,0 +1,31 @@
+# .github/release.yml
+changelog:
+  categories:
+    - title: Breaking Changes
+      labels:
+        - breaking-change
+    - title: New Features
+      labels:
+        - enhancement
+        - feature
+    - title: Bug Fixes
+      labels:
+        - bug
+        - fix
+    - title: Performance Improvements
+      labels:
+        - performance
+    - title: Security
+      labels:
+        - security
+    - title: Infrastructure & CI/CD
+      labels:
+        - ci
+        - infrastructure
+        - devops
+    - title: Documentation
+      labels:
+        - documentation
+    - title: Other Changes
+      labels:
+        - "*"

@@ -1,0 +1,534 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProjectRole {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum ApiKeyType {
+  PUBLIC
+  SECRET
+}
+
+enum FunctionRuntime {
+  NODE16
+  NODE18
+  NODE20
+  PYTHON
+  GO
+}
+
+enum FunctionStatus {
+  ACTIVE
+  INACTIVE
+  ERROR
+  DEPLOYING
+}
+
+enum ProjectPlan {
+  FREE
+  PRO
+  TEAM
+  ENTERPRISE
+}
+
+enum ProjectStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum WebhookEvent {
+  ROW_INSERT
+  ROW_UPDATE
+  ROW_DELETE
+  AUTH_USER_CREATED
+  AUTH_USER_DELETED
+  FUNCTION_COMPLETED
+  FUNCTION_FAILED
+  STORAGE_FILE_UPLOADED
+  STORAGE_FILE_DELETED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String?
+  name         String?
+  avatarUrl    String?
+  googleId     String?   @unique
+  githubId     String?   @unique
+  provider     String?
+  providerId   String?
+  mfaEnabled           Boolean   @default(false)
+  mfaSecret            String?
+  lastLoginAt          DateTime?
+  lastFailedLoginAt    DateTime?
+  failedLoginAttempts  Int       @default(0)
+  lockedUntil          DateTime?
+  role                 String    @default("user")
+  isActive             Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sessions             Session[]
+  ownedProjects        Project[]           @relation("ProjectOwner")
+  projectMemberships   ProjectMember[]
+  apiKeys              ApiKey[]
+  uploadedFiles        File[]
+  createdFunctions     Function[]          @relation("FunctionCreator")
+  functionExecutions   FunctionExecution[]
+  subscriptions        Subscription[]
+  auditLogs            AuditLog[]
+  queryHistories       QueryHistory[]
+  realtimeConnections  RealtimeConnection[]
+  sentInvitations      Invitation[]        @relation("Inviter")
+  secrets              Secret[]
+
+  @@index([email])
+  @@index([provider, providerId])
+  @@map("users")
+}
+
+model Session {
+  id           String    @id @default(cuid())
+  userId       String
+  refreshToken String    @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([refreshToken])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  slug        String        @unique
+  region      String        @default("us-east-1")
+  plan        ProjectPlan   @default(FREE)
+  status      ProjectStatus @default(ACTIVE)
+  createdById String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  createdBy         User              @relation("ProjectOwner", fields: [createdById], references: [id])
+  members           ProjectMember[]
+  apiKeys           ApiKey[]
+  tables            Table[]
+  buckets           Bucket[]
+  functions         Function[]
+  webhooks          Webhook[]
+  subscriptions     Subscription[]
+  auditLogs         AuditLog[]
+  queryHistories    QueryHistory[]
+  rateLimits        RateLimit[]
+  policies          Policy[]
+  secrets           Secret[]
+  invitations       Invitation[]
+  usageMetrics      UsageMetric[]
+  scheduledJobs     ScheduledJob[]
+  realtimeConnections RealtimeConnection[]
+
+  @@index([slug])
+  @@index([createdById])
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  role      String   @default("member")
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@map("project_members")
+}
+
+model ApiKey {
+  id          String     @id @default(cuid())
+  projectId   String
+  name        String
+  key         String     @unique
+  keyHash     String?    @unique
+  type        ApiKeyType @default(SECRET)
+  permissions String?
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdById String
+  createdAt   DateTime   @default(now())
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation(fields: [createdById], references: [id])
+
+  @@index([projectId])
+  @@index([key])
+  @@index([expiresAt])
+  @@map("api_keys")
+}
+
+model Table {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  schema      String   @default("public")
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project      Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  columns      TableColumn[]
+  subscriptions Subscription[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@map("tables")
+}
+
+model TableColumn {
+  id               String   @id @default(cuid())
+  tableId          String
+  name             String
+  type             String
+  defaultValue     String?
+  isNullable       Boolean  @default(false)
+  isUnique         Boolean  @default(false)
+  isPrimary        Boolean  @default(false)
+  isForeignKey     Boolean  @default(false)
+  referencesTable  String?
+  referencesColumn String?
+  createdAt        DateTime @default(now())
+
+  table Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@unique([tableId, name])
+  @@index([tableId])
+  @@map("table_columns")
+}
+
+model Bucket {
+  id               String   @id @default(cuid())
+  projectId        String
+  name             String
+  isPublic         Boolean  @default(false)
+  allowedMimeTypes String?
+  maxFileSize      Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  files   File[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@map("buckets")
+}
+
+model File {
+  id           String   @id @default(cuid())
+  bucketId     String
+  name         String
+  originalName String
+  path         String
+  mimeType     String
+  size         Int
+  width        Int?
+  height       Int?
+  isPublic     Boolean  @default(false)
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  bucket     Bucket @relation(fields: [bucketId], references: [id], onDelete: Cascade)
+  uploadedBy User   @relation(fields: [uploadedById], references: [id])
+
+  @@index([bucketId])
+  @@index([path])
+  @@index([uploadedById])
+  @@map("files")
+}
+
+model Function {
+  id          String           @id @default(cuid())
+  projectId   String
+  name        String
+  slug        String
+  description String?
+  sourceCode  String
+  runtime     FunctionRuntime  @default(NODE18)
+  handler     String           @default("index.handler")
+  timeout     Int              @default(30)
+  memory      Int              @default(256)
+  environment Json?
+  status      FunctionStatus   @default(ACTIVE)
+  createdById String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  project         Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy       User               @relation("FunctionCreator", fields: [createdById], references: [id])
+  executions      FunctionExecution[]
+  scheduledJobs   ScheduledJob[]
+  triggeredWebhooks Webhook[]
+
+  @@unique([projectId, slug])
+  @@index([projectId])
+  @@index([createdById])
+  @@map("functions")
+}
+
+model FunctionExecution {
+  id           String    @id @default(cuid())
+  functionId   String
+  status       String    @default("pending")
+  duration     Int?
+  logs         String?
+  output       String?
+  error        String?
+  payload      Json?
+  triggeredById String?
+  triggeredAt  DateTime  @default(now())
+  completedAt  DateTime?
+
+  function     Function @relation(fields: [functionId], references: [id], onDelete: Cascade)
+  triggeredBy  User?    @relation(fields: [triggeredById], references: [id])
+
+  @@index([functionId])
+  @@index([triggeredAt])
+  @@map("function_executions")
+}
+
+model Policy {
+  id         String   @id @default(cuid())
+  projectId  String
+  name       String
+  tableName  String
+  definition String
+  roles      String[] @default(["authenticated"])
+  status     String   @default("active")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, tableName, name])
+  @@index([projectId])
+  @@map("policies")
+}
+
+model Secret {
+  id        String   @id @default(cuid())
+  projectId String
+  name      String
+  value     String
+  type      String   @default("environment")
+  userId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@map("secrets")
+}
+
+model Invitation {
+  id         String   @id @default(cuid())
+  projectId  String
+  email      String
+  role       String   @default("member")
+  token      String   @unique
+  status     String   @default("pending")
+  expiresAt  DateTime
+  invitedBy  String
+  createdAt  DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  inviter User    @relation("Inviter", fields: [invitedBy], references: [id])
+
+  @@index([projectId])
+  @@index([token])
+  @@index([email])
+  @@map("invitations")
+}
+
+model Webhook {
+  id              String          @id @default(cuid())
+  projectId       String
+  name            String
+  url             String
+  events          String[]
+  secret          String?
+  headers         Json?
+  isActive        Boolean         @default(true)
+  functionId      String?
+  lastTriggeredAt DateTime?
+  createdAt       DateTime        @default(now())
+
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  function  Function? @relation(fields: [functionId], references: [id])
+
+  @@index([projectId])
+  @@map("webhooks")
+}
+
+model Subscription {
+  id          String   @id @default(cuid())
+  projectId   String
+  tableId     String?
+  eventType   String
+  endpoint    String
+  createdById String
+  createdAt   DateTime @default(now())
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  table     Table?  @relation(fields: [tableId], references: [id])
+  createdBy User    @relation(fields: [createdById], references: [id])
+
+  @@index([projectId])
+  @@index([tableId])
+  @@map("subscriptions")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model QueryHistory {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  query     String
+  duration  Int?
+  rows      Int?
+  status    String   @default("SUCCESS")
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("query_histories")
+}
+
+model RateLimit {
+  id        String   @id @default(cuid())
+  projectId String
+  key       String
+  count     Int      @default(0)
+  ttl       DateTime
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, key])
+  @@index([key])
+  @@map("rate_limits")
+}
+
+model RealtimeConnection {
+  id             String    @id @default(cuid())
+  userId         String?
+  projectId      String
+  socketId       String    @unique
+  connectedAt    DateTime  @default(now())
+  disconnectedAt DateTime?
+
+  user    User?   @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([socketId])
+  @@index([connectedAt])
+  @@map("realtime_connections")
+}
+
+model PasswordReset {
+  id        String    @id @default(cuid())
+  email     String
+  token     String    @unique
+  usedAt    DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  @@index([token])
+  @@index([email])
+  @@map("password_resets")
+}
+
+model UsageMetric {
+  id         String   @id @default(cuid())
+  projectId  String
+  metric     String
+  value      Float
+  unit       String
+  recordedAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, metric])
+  @@index([recordedAt])
+  @@map("usage_metrics")
+}
+
+model ScheduledJob {
+  id         String   @id @default(cuid())
+  projectId  String
+  name       String
+  functionId String
+  schedule   String
+  isActive   Boolean  @default(true)
+  lastRunAt  DateTime?
+  nextRunAt  DateTime?
+  createdAt  DateTime @default(now())
+
+  project  Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  function Function @relation(fields: [functionId], references: [id])
+
+  @@index([projectId])
+  @@index([nextRunAt])
+  @@map("scheduled_jobs")
+}

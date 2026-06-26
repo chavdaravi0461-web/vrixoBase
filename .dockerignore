@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+.next/
+build/
+.cache/
+
+# Environment
+.env
+.env.local
+.env.production
+.env.development
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Test
+coverage/
+.nyc_output/
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Temp
+tmp/
+temp/
+*.tmp
+
+# Documentation
+README.md
+LICENSE
+CHANGELOG.md
+
+# Infrastructure
+infra/
+scripts/
+
+# Volume data
+pgdata/
+redisdata/
+miniodata/
+backend_uploads/
