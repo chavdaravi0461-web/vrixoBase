@@ -1,5 +1,3 @@
-const isVercel = process.env.VERCEL === '1';
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -29,10 +27,10 @@ const nextConfig = {
   },
 };
 
-if (!isVercel) {
+// Docker builds (NEXT_STANDALONE=1) need output: 'standalone' for the traced server
+// Vercel sets its own output mode — do NOT set it here
+if (process.env.NEXT_STANDALONE) {
   nextConfig.output = 'standalone';
-  nextConfig.distDir = 'build';
-  nextConfig.serverExternalPackages = [];
 }
 
 module.exports = nextConfig;

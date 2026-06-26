@@ -3,8 +3,8 @@ FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY package.json ./
-RUN npm install --only=production
+COPY package.json package-lock.json* ./
+RUN npm ci --only=production
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
@@ -15,6 +15,7 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV NEXT_STANDALONE=1
 
 RUN npm run build
 
@@ -30,11 +31,11 @@ RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
 
-RUN mkdir build
-RUN chown nextjs:nodejs build
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
 
-COPY --from=builder --chown=nextjs:nodejs /app/build/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/build/static ./build/static
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 
