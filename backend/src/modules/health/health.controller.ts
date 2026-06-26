@@ -35,21 +35,21 @@ export class HealthController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Simple health check' })
-  check() {
+  @ApiOperation({ summary: 'Full health check with all dependencies' })
+  @ApiResponse({ status: 200, description: 'Dependency health status' })
+  async check(): Promise<unknown> {
+    return this.healthService.checkAll();
+  }
+
+  @Get('simple')
+  @ApiOperation({ summary: 'Simple health check (no dependency calls)' })
+  simple() {
     return {
       status: 'healthy',
       uptime: this.healthService.uptimeSeconds,
       version: process.env.npm_package_version || '0.1.0',
       timestamp: new Date().toISOString(),
     };
-  }
-
-  @Get('dependencies')
-  @ApiOperation({ summary: 'Full dependency health check' })
-  @ApiResponse({ status: 200, description: 'Dependency health status' })
-  async dependencies(): Promise<unknown> {
-    return this.healthService.checkAll();
   }
 
   @Get('version')

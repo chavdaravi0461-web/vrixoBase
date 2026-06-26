@@ -1,109 +1,102 @@
 # VrixoBase
 
-> Open-source Supabase Alternative — Self-host your entire backend platform.
-
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker)](https://docker.com)
-[![Node.js](https://img.shields.io/badge/node-20%2B-339933?logo=node.js)](https://nodejs.org)
-[![TypeScript](https://img.shields.io/badge/typescript-5%2B-3178C6?logo=typescript)](https://typescriptlang.org)
-[![NestJS](https://img.shields.io/badge/nestjs-10%2B-E0234E?logo=nestjs)](https://nestjs.com)
-[![Next.js](https://img.shields.io/badge/next.js-16-000000?logo=next.js)](https://nextjs.org)
-[![Prisma](https://img.shields.io/badge/prisma-5-2D3748?logo=prisma)](https://prisma.io)
-
----
-
-## Features
-
-| # | Area | Description |
-|---|------|-------------|
-| 1 | **Authentication** | Email/password, OAuth (Google, GitHub), JWT, refresh tokens, MFA, password reset |
-| 2 | **Database** | Full PostgreSQL management — create tables, columns, indexes, execute queries, schema visualization |
-| 3 | **Auto API Proxy** | RESTful endpoints auto-generated from your database tables |
-| 4 | **Storage** | S3-compatible file storage via MinIO — buckets, signed URLs, public/private files |
-| 5 | **Realtime** | WebSocket-based subscriptions, presence, and broadcast via Socket.IO |
-| 6 | **Edge Functions** | Serverless function execution (Node.js, Python, Go), webhook triggers |
-| 7 | **Monitoring** | Metrics, logging, Prometheus + Grafana integration |
-| 8 | **Dashboard** | Next.js admin UI — manage projects, tables, storage, functions, settings |
-| 9 | **Security** | Row-Level Security (RLS), API keys, secrets management, CORS, rate limiting |
-| 10 | **Team Collaboration** | Project members, roles, invitations, audit logging |
-
----
+> Open-source Backend-as-a-Service platform — self-host your entire backend.
 
 ## Quick Start
 
+**Prerequisites:** Node.js 20+, Docker (optional — backend runs on host if Docker unavailable)
+
 ```bash
-# Clone the repository
+# 1. Clone
 git clone https://github.com/your-org/vrixobase.git
 cd vrixobase
 
-# Set up environment and start everything
-./scripts/setup.sh --dev
+# 2. One-command setup (install, configure, migrate, seed, verify)
+npm run setup
+
+# 3. Start development
+npm run dev
 ```
 
-Or manually:
+**That's it.** The API is at `http://localhost:4000/api` and Swagger docs at `http://localhost:4000/api/docs`.
+
+---
+
+## Prerequisites
+
+| Requirement | Version | Check |
+|---|---|---|
+| Node.js | >= 20.0.0 | `node --version` |
+| npm | >= 10.0 | `npm --version` |
+| Docker (optional) | >= 24.0 | `docker --version` |
+
+If Docker is not available, ensure PostgreSQL, Redis, and MinIO are running locally and configured in `.env`.
+
+---
+
+## Services
+
+| Service | Default URL | Description |
+|---|---|---|
+| **API** | http://localhost:4000/api | NestJS backend |
+| **Swagger UI** | http://localhost:4000/api/docs | Interactive API docs |
+| **Frontend** | http://localhost:3000 | Next.js dashboard |
+| **PostgreSQL** | localhost:5432 (or 5433 with Docker) | Database (via Prisma) |
+| **Redis** | localhost:6379 | Cache + pub/sub |
+| **MinIO** | localhost:9000 (API) / 9001 (Console) | S3-compatible storage |
+| **Prisma Studio** | `npm run prisma:studio` | DB GUI |
+
+---
+
+## Commands
 
 ```bash
-# Copy environment file
-cp .env.example .env
+npm run setup          # Full project setup (install, configure, migrate, seed, verify)
+npm run setup --check  # Validate environment only
 
-# Start all services
-docker-compose up -d
-```
+npm run dev            # Start backend + frontend concurrently
+npm run build          # Build all workspaces
+npm run lint           # Lint all workspaces
+npm run test           # Run unit tests
+npm run test:e2e       # Run end-to-end tests
 
-Once running:
+npm run docker:up      # Start Docker services (PostgreSQL, Redis, MinIO)
+npm run docker:down    # Stop Docker services
 
-| Service | URL |
-|---------|-----|
-| Dashboard | http://localhost:3000 |
-| API | http://localhost:4000 |
-| API Docs (Swagger) | http://localhost:4000/api/docs |
-| MinIO Console | http://localhost:9001 |
-| PostgreSQL | `localhost:5432` |
-| Redis | `localhost:6379` |
+npm run prisma:studio  # Open Prisma database GUI
+npm run prisma:push    # Push schema to database
 
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                         Nginx                            │
-│              Reverse Proxy / SSL / Rate Limiter          │
-└──────┬──────────────────────┬────────────────────┬───────┘
-       │                      │                    │
-       ▼                      ▼                    ▼
-┌──────────────┐    ┌──────────────────┐  ┌──────────────┐
-│   Frontend   │    │     Backend      │  │   Storage    │
-│  Next.js 16  │    │   NestJS 10 API  │  │   MinIO      │
-│  React 19    │◄──►│   Socket.IO      │  │   S3 API     │
-│  Tailwind 4  │    │   Prisma ORM     │  │              │
-└──────────────┘    └────────┬─────────┘  └──────────────┘
-                             │
-              ┌──────────────┼──────────────┐
-              ▼              ▼              ▼
-       ┌──────────┐  ┌──────────┐  ┌──────────────┐
-       │PostgreSQL│  │  Redis   │  │   Prometheus │
-       │   16     │  │    7     │  │   + Grafana  │
-       └──────────┘  └──────────┘  └──────────────┘
+# ── Certification & Release Engineering ──
+npm run certify        # Full production certification (all checks below, plus release-report.json)
+npm run smoke          # Production smoke tests (16 endpoints, payload-validated)
+npm run release:report # Generate release-report.json (git, version, health, deps)
+npm run rollback:check # Verify rollback readiness (migrations, build, env)
+npm run startup:timing # Measure cold start & connection latencies
+npm run memory:baseline# Memory baseline (RSS, heap, CPU, handles)
+npm run dep:audit      # Dependency audit (duplicates, vulns, circular, orphans)
 ```
 
 ---
 
-## Tech Stack
+## Environment Variables
 
-| Layer | Technology |
-|-------|-----------|
-| **Backend** | NestJS 10, TypeScript 5, Express |
-| **Frontend** | Next.js 16, React 19, Tailwind CSS 4 |
-| **Database** | PostgreSQL 16 (via Prisma ORM) |
-| **Cache** | Redis 7 (via ioredis) |
-| **Storage** | MinIO (S3-compatible) |
-| **Realtime** | Socket.IO, WebSocket |
-| **Auth** | Passport.js, JWT, bcryptjs |
-| **API** | RESTful, Swagger/OpenAPI |
-| **Monitoring** | Prometheus, Grafana, node-exporter |
-| **Proxy** | Nginx (SSL, rate limiting, caching) |
-| **Runtime** | Node.js 20+, Docker, Docker Compose |
+The `.env` file is auto-created from `.env.example` during `npm run setup`.
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `DATABASE_URL` | yes | — | PostgreSQL connection string |
+| `JWT_ACCESS_SECRET` | yes | (auto-generated) | JWT signing key (min 16 chars) |
+| `JWT_REFRESH_SECRET` | yes | (auto-generated) | Refresh token key |
+| `ENCRYPTION_KEY` | yes | (auto-generated) | Encryption key (min 16 chars) |
+| `ENCRYPTION_SALT` | yes | (auto-generated) | Encryption salt |
+| `SESSION_SECRET` | yes | (auto-generated) | Session secret |
+| `MINIO_ACCESS_KEY` | yes | `vrixo_admin` | MinIO access key |
+| `MINIO_SECRET_KEY` | yes | `vrixo_minio_secret` | MinIO secret key |
+| `REDIS_HOST` | no | `localhost` | Redis host |
+| `REDIS_PORT` | no | `6379` | Redis port |
+| `CORS_ORIGINS` | no | `http://localhost:3000` | Allowed CORS origins |
+
+If any required variable is missing, the application will print exactly which one is missing and terminate gracefully at startup.
 
 ---
 
@@ -111,167 +104,247 @@ Once running:
 
 ```
 vrixobase/
-├── backend/                  # NestJS API server
-│   ├── prisma/               # Schema & migrations
+├── backend/                 # NestJS API
+│   ├── prisma/              # Schema, migrations, seed
 │   ├── src/
-│   │   ├── modules/          # Feature modules
-│   │   │   ├── auth/         # Auth controller, service, guards, strategies
-│   │   │   ├── database/     # Table management, SQL queries
-│   │   │   ├── storage/      # File buckets & uploads
-│   │   │   ├── realtime/     # WebSocket gateway + subscriptions
-│   │   │   ├── functions/    # Serverless edge functions
-│   │   │   ├── monitoring/   # Metrics & health data
-│   │   │   ├── security/     # RLS policies, secrets
-│   │   │   ├── team/         # Members & invitations
-│   │   │   ├── audit/        # Audit logs
-│   │   │   ├── project/      # Project CRUD
-│   │   │   └── health/       # Health check endpoint
-│   │   ├── common/           # Shared decorators, filters, interceptors
-│   │   ├── app.module.ts     # Root module
-│   │   └── main.ts           # Entry point
+│   │   ├── common/          # Shared filters, interceptors, decorators
+│   │   ├── modules/         # Feature modules (auth, database, storage, etc.)
+│   │   ├── app.module.ts    # Root module
+│   │   ├── main.ts          # Entry point (env validation runs first)
+│   │   └── env.validator.ts # Startup environment validation
 │   └── Dockerfile
-├── frontend/                 # Next.js dashboard
-│   ├── src/
-│   │   ├── app/              # Pages & layouts
-│   │   ├── components/       # Reusable UI components
-│   │   ├── hooks/            # React hooks (useAuth, useDatabase, etc.)
-│   │   ├── lib/              # API client & SDK
-│   │   ├── stores/           # Zustand state stores
-│   │   └── types/            # TypeScript definitions
-│   └── Dockerfile
-├── infra/                    # Infrastructure config
-│   ├── nginx/                # Nginx config (SSL, proxy, caching)
-│   ├── monitoring/           # Prometheus & Grafana config
-│   ├── docker-compose.prod.yml
-│   └── docker-compose.monitoring.yml
-├── scripts/
-│   ├── setup.sh              # One-command setup
-│   ├── backup.sh             # Database + storage backup
-│   └── restore.sh            # Restore from backup
-├── docker-compose.yml        # Main compose file
-├── .env.example              # Environment variables template
-└── README.md
+├── frontend/                # Next.js dashboard
+├── e2e/                     # Playwright end-to-end tests
+├── packages/                # Shared packages
+├── scripts/                 # Setup, backup, restore utilities
+├── infra/                   # Kubernetes, Nginx, monitoring config
+├── docker-compose.yml       # Local development services
+└── .env.example             # Environment template
 ```
 
 ---
 
-## Environment Setup
+## Architecture
 
-Copy `.env.example` to `.env` and configure:
-
-```bash
-cp .env.example .env
 ```
-
-Key variables:
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection | `postgresql://vrixo:vrixo_secret@postgres:5432/vrixo` |
-| `REDIS_URL` | Redis connection | `redis://redis:6379` |
-| `JWT_SECRET` | JWT signing secret | (generate with `openssl rand -base64 48`) |
-| `JWT_REFRESH_SECRET` | Refresh token secret | (generate with `openssl rand -base64 48`) |
-| `MINIO_ACCESS_KEY` | MinIO access key | `vrixo_admin` |
-| `MINIO_SECRET_KEY` | MinIO secret key | `vrixo_minio_secret` |
-| `CORS_ORIGIN` | Allowed CORS origin | `http://localhost:3000` |
-| `GOOGLE_CLIENT_ID` | Google OAuth client ID | (optional) |
-| `GITHUB_CLIENT_ID` | GitHub OAuth client ID | (optional) |
+┌─────────────┐     ┌──────────────────┐     ┌──────────────┐
+│  Frontend   │────▶│     Backend      │────▶│  PostgreSQL  │
+│  Next.js    │     │   NestJS API      │     │  (via Prisma)│
+│             │     │   + Socket.IO     │     └──────────────┘
+└─────────────┘     │   + Prometheus    │     ┌──────────────┐
+                    └────────┬─────────┘────▶│    Redis     │
+                             │               │  (ioredis)   │
+                             │               └──────────────┘
+                             │               ┌──────────────┐
+                             └──────────────▶│    MinIO     │
+                                              │  (S3 API)    │
+                                              └──────────────┘
+```
 
 ---
 
-## Development
+## Node.js Backend
+
+### How to run manually (without Docker)
 
 ```bash
-# Backend (watch mode)
-cd backend
-npm install
-npm run start:dev
+# 1. Start infrastructure
+docker compose up -d postgres redis minio
 
-# Frontend (watch mode)
-cd frontend
-npm install
-npm run dev
+# 2. Setup
+npm run setup
 
-# Prisma Studio (DB GUI)
-cd backend
-npm run prisma:studio
+# 3. Start backend in watch mode
+npm run dev -w backend
+```
 
-# Run tests
-cd backend
-npm run test
+### Startup sequence
+
+1. **Environment validation** — `env.validator.ts` checks all required variables. Missing vars are printed with explanations before the app exits.
+2. **Database connection** — Prisma connects to PostgreSQL using `DATABASE_URL`.
+3. **Redis** — ioredis connects for caching and pub/sub.
+4. **MinIO** — S3-compatible storage client connects.
+5. **WebSocket** — Socket.IO gateway starts for realtime subscriptions.
+6. **Swagger** — OpenAPI docs generated at `/api/docs`.
+7. **Metrics** — Prometheus endpoint at `/api/metrics`.
+
+### Health endpoints
+
+| Endpoint | Description |
+|---|---|
+| `GET /api/health` | Full dependency health (PostgreSQL, Redis, MinIO, Storage, Realtime, AI) |
+| `GET /api/health/simple` | Lightweight health (no dependency calls) |
+| `GET /api/health/liveness` | K8s liveness probe |
+| `GET /api/health/readiness` | K8s readiness probe |
+| `GET /api/health/startup` | K8s startup probe |
+| `GET /api/health/version` | Version info |
+| `GET /api/metrics` | Prometheus metrics |
+
+---
+
+## Docker Compose
+
+```bash
+# Start all services in background
+docker compose up -d
+
+# View logs
+docker compose logs -f backend
+
+# Stop everything
+docker compose down
+```
+
+When using Docker Compose, the backend container connects to `postgres`, `redis`, and `minio` containers automatically. The PostgreSQL port is mapped to `5433` to avoid conflicts with local PostgreSQL installations.
+
+---
+
+## Testing
+
+```bash
+# Unit tests
+npm run test -w backend
+
+# E2E tests (requires running backend)
 npm run test:e2e
 
 # Lint
-cd backend && npm run lint
-cd frontend && npm run lint
+npm run lint
+
+# Type check
+npx tsc --noEmit -p backend/tsconfig.json
 ```
 
 ---
 
-## Deployment
+## Deployment & Certification
 
-### Docker (recommended)
+### Release Certification
 
-```bash
-# Production
-docker-compose -f docker-compose.yml -f infra/docker-compose.prod.yml up -d
-
-# With monitoring
-docker-compose -f docker-compose.yml -f infra/docker-compose.prod.yml -f infra/docker-compose.monitoring.yml up -d
-```
-
-### Bare Metal
-
-1. Install PostgreSQL 16, Redis 7, MinIO, Node.js 20+
-2. Configure `.env` with service endpoints
-3. Run database migrations:
-   ```bash
-   cd backend
-   npx prisma generate
-   npx prisma migrate deploy
-   ```
-4. Build and start backend: `npm run build && npm run start:prod`
-5. Build and start frontend: `cd frontend && npm run build && npm start`
-
-### SSL (Let's Encrypt)
+Every deployment is automatically verified before considered successful:
 
 ```bash
-# Install certbot, obtain certificates
-certbot certonly --standalone -d yourdomain.com
-
-# Mount certs in nginx container
-# Place in ./infra/nginx/ssl/ and update default.conf
+npm run certify
 ```
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for full deployment guide.
+This runs all certification modules and produces two artifacts:
+
+| Artifact | Description |
+|---|---|
+| `production-certification-report.json` | Full certification: runtime, health, smoke tests, timing, memory, deps, rollback |
+| `release-report.json` | Release manifest: git commit, version, build time, runtime verification, health + dependency summary |
+
+### Certification Criteria
+
+Deployment success means:
+
+- ✅ Application started (liveness + readiness probes)
+- ✅ All 6 dependencies healthy (database, redis, minio, storage, realtime, ai*)
+- ✅ All 16 API endpoints operational (smoke-tested with payload validation)
+- ✅ Metrics endpoint returning Prometheus data
+- ✅ Database tables creatable and queryable
+- ✅ Storage buckets creatable and listable
+- ✅ Realtime subscriptions creatable
+- ✅ Security policies and secrets operational
+- ✅ Team members accessible
+- ✅ Audit logs queryable
+
+*`ai` dependency may report `degraded` if `OPENAI_API_KEY` is not configured — this is expected.
+
+### Smoke Tests
+
+```bash
+npm run smoke           # 16 endpoints, 36 assertions, payload-validated
+```
+
+### Rollback Verification
+
+```bash
+npm run rollback:check  # Checks: git state, migration rollback, build backup, env preservation
+```
+
+### Startup Timing
+
+```bash
+npm run startup:timing  # Measures: backend cold start, DB, Redis, MinIO connection latencies
+```
+
+### Memory Baseline
+
+```bash
+npm run memory:baseline # Reports: RSS, heap total/used, CPU user/system, open handles
+```
+
+### Dependency Audit
+
+```bash
+npm run dep:audit # Checks: duplicates, vulnerabilities (high+), circular deps, orphan modules
+```
+
+### Release Report
+
+```bash
+npm run release:report  # Produces release-report.json (consumed by CI/CD pipelines)
+```
 
 ---
 
-## Contributing
+## Vercel Deployment
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feat/amazing`)
-3. Commit changes (conventional commits)
-4. Push and open a Pull Request
+VrixoBase frontend (Next.js) can be deployed to Vercel. The NestJS backend requires a separate hosting platform (see [Backend Hosting](#backend-hosting) below).
 
-See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for detailed guidelines.
+### One-Click Deploy
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyour-org%2Fvrixobase&root-directory=frontend&project-name=vrixobase&repository-name=vrixobase&env=NEXT_PUBLIC_API_URL,NEXT_PUBLIC_WS_URL,NEXT_PUBLIC_APP_URL)
+
+### Manual Setup
+
+1. **Push to GitHub** and import the repo into Vercel.
+
+2. **Configure project in Vercel dashboard:**
+
+   | Setting | Value |
+   |---|---|
+   | Root Directory | `frontend` |
+   | Framework | Next.js |
+   | Build Command | `npm run vercel-build` (set in `vercel.json`) |
+   | Output Directory | `build` (set in `vercel.json`) |
+
+3. **Add environment variables** — copy from `frontend/.env.vercel` to Vercel project settings:
+
+   | Variable | Example Value | Notes |
+   |---|---|---|
+   | `NEXT_PUBLIC_API_URL` | `https://api.vrixobase.com` | Your deployed backend URL |
+   | `NEXT_PUBLIC_WS_URL` | `wss://api.vrixobase.com` | WebSocket (same backend) |
+   | `NEXT_PUBLIC_APP_URL` | `https://vrixobase.vercel.app` | Auto-set by Vercel |
+   | `NEXT_PUBLIC_AUTH_GOOGLE_REDIRECT` | `https://vrixobase.vercel.app/auth/callback/google` | Update per env |
+   | `NEXT_PUBLIC_AUTH_GITHUB_REDIRECT` | `https://vrixobase.vercel.app/auth/callback/github` | Update per env |
+   | `NEXT_PUBLIC_STORAGE_URL` | `https://your-bucket.s3.amazonaws.com` | S3/MinIO endpoint |
+   | `NEXT_PUBLIC_MINIO_ENDPOINT` | `your-bucket.s3.amazonaws.com` | S3/MinIO host |
+   | `NEXT_PUBLIC_MINIO_USE_SSL` | `true` | `true` for cloud |
+
+4. **Deploy** — Vercel automatically builds and deploys on every push to the default branch.
+
+### Preview Deployments
+
+Each pull request gets a unique preview URL. Environment variables can be overridden per branch in the Vercel dashboard.
+
+### Backend Hosting
+
+The NestJS backend **cannot run on Vercel serverless** (WebSocket + persistent connections). Deploy it separately:
+
+| Platform | Notes |
+|---|---|
+| **Railway** | `railway.toml` included; `docker compose up` style |
+| **Render** | Web Service from Dockerfile |
+| **Fly.io** | `fly.toml` with `dockerfile: backend/Dockerfile` |
+| **Kubernetes** | Manifests in `infra/k8s/` |
+| **VPS (manual)** | Docker Compose via `infra/docker-compose.prod.yml` |
+
+Then set `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_WS_URL` to the deployed backend's URL.
 
 ---
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
-
----
-
-## Documentation
-
-| Document | Description |
-|----------|-------------|
-| [API Reference](docs/API.md) | Complete API endpoint documentation |
-| [Deployment Guide](docs/DEPLOYMENT.md) | Production deployment instructions |
-| [Architecture](docs/ARCHITECTURE.md) | System design and data flow |
-| [Security](docs/SECURITY.md) | Security checklist and best practices |
-| [SDK Reference](docs/SDK.md) | Client SDK (JS/TS) documentation |
-| [Roadmap](docs/ROADMAP.md) | Development roadmap and changelog |
-| [Contributing](docs/CONTRIBUTING.md) | How to contribute |
+MIT

@@ -28,7 +28,15 @@
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "docker:build": "docker compose build",
-    "setup": "npm install && npm run prisma:generate"
+    "setup": "node scripts/setup.mjs",
+    "setup:check": "node scripts/setup.mjs --check",
+    "smoke": "node scripts/smoke.mjs",
+    "release:report": "node scripts/report.mjs",
+    "certify": "node scripts/certify.mjs",
+    "rollback:check": "node scripts/rollback-check.mjs",
+    "startup:timing": "node scripts/startup-timing.mjs",
+    "memory:baseline": "node scripts/memory-baseline.mjs",
+    "dep:audit": "node scripts/dependency-audit.mjs"
   },
   "engines": {
     "node": ">=20.0.0"
