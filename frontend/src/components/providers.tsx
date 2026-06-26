@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { Toaster } from 'sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { QueryProvider } from '@/components/providers/query-provider';
 import { useAuthStore } from '@/stores/auth-store';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -14,7 +15,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <TooltipProvider delayDuration={200}>
-      {children}
+      <QueryProvider>
+        {children}
+      </QueryProvider>
       <Toaster
         position="top-right"
         theme="dark"
