@@ -41,7 +41,7 @@ function GoogleButton({ isLoading, onError }: OAuthButtonProps) {
     setLocalLoading(true);
     try {
       await openOAuthPopup(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/google`
+        `${process.env.NEXT_PUBLIC_API_URL || ''}/api/auth/google`
       );
     } catch (err) {
       onError?.(err instanceof Error ? err.message : 'OAuth failed');
@@ -92,7 +92,7 @@ function GitHubButton({ isLoading, onError }: OAuthButtonProps) {
     setLocalLoading(true);
     try {
       await openOAuthPopup(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/github`
+        `${process.env.NEXT_PUBLIC_API_URL || ''}/api/auth/github`
       );
     } catch (err) {
       onError?.(err instanceof Error ? err.message : 'OAuth failed');

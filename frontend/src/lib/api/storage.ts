@@ -1,4 +1,4 @@
-import { apiRequest } from './client';
+import { apiRequest, getApiBaseUrl } from './client';
 
 export interface Bucket {
   id: string;
@@ -59,7 +59,7 @@ export async function uploadFile(bucketId: string, file: File, isPublic: boolean
   formData.append('isPublic', String(isPublic));
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('vrixo_access_token') : null;
-  const res = await fetch(`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000')}/api/storage/buckets/${bucketId}/upload`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/storage/buckets/${bucketId}/upload`, {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,

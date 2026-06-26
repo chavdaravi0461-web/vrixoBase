@@ -1,4 +1,4 @@
-import { apiRequest } from './client';
+import { apiRequest, getApiBaseUrl } from './client';
 
 interface AuthResponse {
   accessToken: string;
@@ -58,9 +58,9 @@ export async function getMe(): Promise<AuthResponse['user']> {
 }
 
 export async function googleLogin() {
-  window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/auth/google`;
+  window.location.href = `${getApiBaseUrl()}/api/auth/google`;
 }
 
 export async function githubLogin() {
-  window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/auth/github`;
+  window.location.href = `${getApiBaseUrl()}/api/auth/github`;
 }

@@ -26,7 +26,7 @@ export default function AuthCallbackPage() {
 
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`,
+          `${process.env.NEXT_PUBLIC_API_URL || ''}/api/auth/me`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,

@@ -124,7 +124,7 @@ export default function ApiPage() {
     setResponse('');
 
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || '';
       const token = typeof window !== 'undefined' ? localStorage.getItem('vrixo_access_token') : null;
 
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };

@@ -115,7 +115,7 @@ export default function BucketPage() {
     if (!signedUrlFile) return;
     setGeneratingUrl(true);
     setSignedUrlResult(null);
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || '';
 
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('vrixo_access_token') : null;
