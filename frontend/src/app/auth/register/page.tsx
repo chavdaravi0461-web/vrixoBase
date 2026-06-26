@@ -78,8 +78,8 @@ export default function RegisterPage() {
         throw new Error(data.message || 'Registration failed');
       }
 
-      const data = await res.json();
-      login(data.user, data.accessToken, data.refreshToken);
+      const resData = await res.json();
+      login(resData.data.user, resData.data.accessToken, resData.data.refreshToken);
       toast.success('Account created successfully!');
       router.push('/dashboard');
     } catch (err) {

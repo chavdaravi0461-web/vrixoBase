@@ -62,8 +62,8 @@ export default function LoginPage() {
         throw new Error(data.message || 'Invalid email or password');
       }
 
-      const data = await res.json();
-      login(data.user, data.accessToken, data.refreshToken);
+      const resData = await res.json();
+      login(resData.data.user, resData.data.accessToken, resData.data.refreshToken);
       toast.success('Welcome back!');
       router.push('/dashboard');
     } catch (err) {
