@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import * as Minio from 'minio';
 
 interface HealthCheckResult {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -96,15 +97,30 @@ export class HealthService {
     const start = Date.now();
     try {
       const endpoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost');
-      const port = this.configService.get<string>('MINIO_PORT', '9000');
-      const url = `http://${endpoint}:${port}/minio/health/live`;
+      const useSSL = this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true';
+      const protocol = useSSL ? 'https' : 'http';
+      const port = this.configService.get<string>('MINIO_PORT', useSSL ? '' : '9000');
+      const hostPort = port ? `${endpoint}:${port}` : endpoint;
+      const url = `${protocol}://${hostPort}/minio/health/live`;
       const result = await fetch(url, { signal: AbortSignal.timeout(3000) });
       if (result.ok) {
         return { status: 'healthy', latencyMs: Date.now() - start };
       }
-      return { status: 'unhealthy', latencyMs: Date.now() - start, error: `MinIO returned ${result.status}` };
-    } catch (err) {
-      return { status: 'unhealthy', latencyMs: Date.now() - start, error: (err as Error).message };
+      return { status: 'unhealthy', latencyMs: Date.now() - start, error: `MinIO health returned ${result.status}` };
+    } catch {
+      try {
+        const client = new Minio.Client({
+          endPoint: this.configService.get<string>('MINIO_ENDPOINT', 'localhost'),
+          port: Number(this.configService.get<string>('MINIO_PORT', '0')) || undefined,
+          useSSL: this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true',
+          accessKey: this.configService.get<string>('MINIO_ACCESS_KEY', 'minioadmin'),
+          secretKey: this.configService.get<string>('MINIO_SECRET_KEY', 'minioadmin'),
+        });
+        await client.listBuckets();
+        return { status: 'healthy', latencyMs: Date.now() - start };
+      } catch (err2) {
+        return { status: 'unhealthy', latencyMs: Date.now() - start, error: (err2 as Error).message };
+      }
     }
   }
 
