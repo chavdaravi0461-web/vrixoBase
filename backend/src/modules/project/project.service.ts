@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { TenancyService } from '../tenancy/tenancy.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 
 type PrismaUniqueConstraintError = {
@@ -19,7 +20,10 @@ type PrismaUniqueConstraintError = {
 export class ProjectService {
   private readonly logger = new Logger(ProjectService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tenancy: TenancyService,
+  ) {}
 
   async create(dto: CreateProjectDto, userId: string) {
     const existing = await this.prisma.project.findFirst({
@@ -70,6 +74,15 @@ export class ProjectService {
         throw new ConflictException('A project with this slug already exists');
       }
       throw error;
+    }
+
+    try {
+      await this.tenancy.provisionProjectSchema(project.id);
+      this.logger.log(`Provisioned schema for project ${project.id}`);
+    } catch (schemaError) {
+      this.logger.error(`Failed to provision schema for project ${project.id}, rolling back`, schemaError);
+      await this.prisma.project.delete({ where: { id: project.id } }).catch(() => {});
+      throw schemaError;
     }
 
     await this.prisma.auditLog.create({
@@ -178,6 +191,13 @@ export class ProjectService {
     await this.get(id, userId);
 
     await this.prisma.project.delete({ where: { id } });
+
+    try {
+      await this.tenancy.teardownProjectSchema(id);
+      this.logger.log(`Tore down schema for deleted project ${id}`);
+    } catch (err) {
+      this.logger.warn(`Failed to tear down schema for project ${id}: ${err}`);
+    }
 
     this.logger.log(`Project ${id} deleted`);
   }

@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { requireProjectMembership } from '../../common/authorization/helpers';
+import { RlsPolicyEngineService } from '../rls/rls-policy-engine.service';
 import * as Minio from 'minio';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
@@ -65,6 +66,7 @@ export class StorageService {
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly rlsPolicyEngine: RlsPolicyEngineService,
   ) {
     this.minioClient = new Minio.Client({
       endPoint: this.configService.get<string>('MINIO_ENDPOINT', 'localhost'),
@@ -350,6 +352,81 @@ export class StorageService {
 
     this.logger.log(`Folder created: ${safePath}`);
     return { message: 'Folder created successfully', path: safePath };
+  }
+
+  async getSignedUploadUrl(
+    bucketId: string,
+    fileName: string,
+    mimeType: string,
+    expiresIn: number = 3600,
+    userId?: string,
+  ) {
+    const bucket = await this.prisma.bucket.findUnique({ where: { id: bucketId } });
+    if (!bucket) throw new NotFoundException('Bucket not found');
+
+    await requireProjectMembership(this.prisma, bucket.projectId, userId);
+
+    const uuid = uuidv4();
+    const sanitized = sanitizeFilename(fileName);
+    const objectPath = `${bucket.projectId}/${bucketId}/${uuid}-${sanitized}`;
+    const minioBucketName = this.getBucketName(bucket.projectId, bucket.id);
+
+    const url = await this.minioClient.presignedPutObject(minioBucketName, objectPath, expiresIn);
+
+    return { url, objectPath, expiresIn };
+  }
+
+  async checkStorageRls(
+    projectId: string,
+    bucketId: string,
+    filePath: string,
+    action: 'select' | 'insert' | 'update' | 'delete',
+    userId?: string,
+  ): Promise<boolean> {
+    if (!userId) return bucketId === 'public';
+
+    const policies = await this.prisma.policy.findMany({
+      where: {
+        projectId,
+        tableName: 'files',
+        status: 'active',
+      },
+    });
+
+    if (policies.length === 0) return true;
+
+    const bucket = await this.prisma.bucket.findUnique({ where: { id: bucketId } });
+    if (!bucket) return false;
+
+    for (const policy of policies) {
+      if (policy.roles.length > 0) {
+        const member = await this.prisma.projectMember.findFirst({
+          where: { projectId, userId },
+        });
+        if (!member || !policy.roles.includes(member.role)) {
+          continue;
+        }
+      }
+
+      const def = policy.definition.toLowerCase();
+      if (def === 'true' || def === '(true)') continue;
+      if (!policy.definition.includes('auth.uid()') && !def.includes('auth.role()')) {
+        continue;
+      }
+
+      const uidMatch = policy.definition.match(/auth\.uid\(\s*\)\s*=\s*'([^']+)'/);
+      if (uidMatch && uidMatch[1] !== userId) return false;
+
+      const roleMatch = policy.definition.match(/auth\.role\(\s*\)\s*=\s*'([^']+)'/);
+      if (roleMatch) {
+        const member = await this.prisma.projectMember.findFirst({
+          where: { projectId, userId },
+        });
+        if (!member || member.role?.toLowerCase() !== roleMatch[1].toLowerCase()) return false;
+      }
+    }
+
+    return true;
   }
 
   async optimizeImage(fileId: string, options: ImageOptimizeOptions, userId?: string) {

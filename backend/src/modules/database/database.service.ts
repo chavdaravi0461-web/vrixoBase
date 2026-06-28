@@ -5,6 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { RlsPolicyEngineService } from '../rls/rls-policy-engine.service';
 import { CreateTableDto, ColumnDefinition } from './dto/create-table.dto';
 import { AddColumnDto } from './dto/add-column.dto';
 
@@ -12,7 +13,10 @@ import { AddColumnDto } from './dto/add-column.dto';
 export class DatabaseService {
   private readonly logger = new Logger(DatabaseService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly rlsPolicyEngine: RlsPolicyEngineService,
+  ) {}
 
   private schema(projectId: string): string {
     return `proj_${projectId.replace(/[^a-zA-Z0-9_]/g, '')}`;
@@ -257,12 +261,26 @@ export class DatabaseService {
       update: { description: dto.description ?? null },
     });
 
+    await this.rlsPolicyEngine.enableRlsOnTable(schemaName, dto.name);
+
     return this.getTable(projectId, dto.name);
   }
 
   async deleteTable(projectId: string, tableName: string) {
     const schemaName = this.schema(projectId);
     await this.ensureSchema(schemaName);
+
+    await this.rlsPolicyEngine.disableRlsOnTable(schemaName, tableName);
+
+    const policies = await this.prisma.policy.findMany({
+      where: { projectId, tableName },
+    });
+    for (const policy of policies) {
+      await this.rlsPolicyEngine.removePolicy(policy);
+    }
+    await this.prisma.policy.deleteMany({
+      where: { projectId, tableName },
+    });
 
     await this.prisma.$executeRawUnsafe(
       `DROP TABLE IF EXISTS ${this.id(schemaName)}.${this.id(tableName)} CASCADE`,

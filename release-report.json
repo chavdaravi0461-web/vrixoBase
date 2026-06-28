@@ -1,0 +1,68 @@
+{
+  "release": {
+    "version": "0.1.0",
+    "buildTime": "2026-06-26T15:28:46.502Z",
+    "generatedAt": "2026-06-26T15:28:46.869Z"
+  },
+  "git": {
+    "commit": "e33dc470239e7745ba8312f435adeb2637e582f5",
+    "branch": "main",
+    "tag": "\"\"",
+    "message": "feat: Initial VrixoBase source code",
+    "author": "chavda ravi",
+    "date": "2026-06-26T19:09:52+05:30"
+  },
+  "deployment": {
+    "baseUrl": "http://localhost:4001/api",
+    "status": "healthy",
+    "uptime": 0
+  },
+  "health": {
+    "status": "healthy",
+    "liveness": "alive",
+    "readiness": "ready"
+  },
+  "dependencies": {
+    "database": {
+      "status": "healthy",
+      "latencyMs": 5,
+      "error": null
+    },
+    "redis": {
+      "status": "healthy",
+      "latencyMs": 6,
+      "error": null
+    },
+    "minio": {
+      "status": "healthy",
+      "latencyMs": 2,
+      "error": null
+    },
+    "storage": {
+      "status": "healthy",
+      "latencyMs": 2,
+      "error": null
+    },
+    "realtime": {
+      "status": "healthy",
+      "latencyMs": 5,
+      "error": null
+    },
+    "ai": {
+      "status": "degraded",
+      "latencyMs": 0,
+      "error": "OPENAI_API_KEY not configured"
+    }
+  },
+  "runtime": {
+    "verification": "passed",
+    "timestamp": "2026-06-26T15:28:46.869Z"
+  },
+  "certification": {
+    "status": "passed",
+    "timestamp": "2026-06-26T15:29:47.613Z",
+    "durationMs": 62226,
+    "runtimeVerification": "passed",
+    "smokeTests": "passed"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "module": "startup-timing",
+  "timestamp": "2026-06-26T15:28:47.060Z",
+  "backendUptime": 0,
+  "timings": {
+    "backend": {
+      "label": "Backend Cold Start (estimated from uptime)",
+      "valueMs": "N/A",
+      "source": "backend not running"
+    },
+    "ping": {
+      "label": "Simple Ping",
+      "avgMs": "2.7",
+      "minMs": "2.0",
+      "maxMs": "3.9",
+      "trials": [
+        3.9414,
+        2.2694,
+        1.9791
+      ]
+    },
+    "fullHealth": {
+      "label": "Full Health Check",
+      "avgMs": "7.4",
+      "minMs": "6.9",
+      "maxMs": "8.0",
+      "trials": [
+        7.2098,
+        7.9938,
+        6.872
+      ]
+    },
+    "database": {
+      "label": "Database Connection Time (from health check)",
+      "avgMs": "3ms",
+      "source": "/api/health"
+    },
+    "redis": {
+      "label": "Redis Connection Time (from health check)",
+      "avgMs": "5ms",
+      "source": "/api/health"
+    },
+    "minio": {
+      "label": "MinIO Connection Time (from health check)",
+      "avgMs": "2ms",
+      "source": "/api/health"
+    }
+  }
+}

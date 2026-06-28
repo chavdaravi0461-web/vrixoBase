@@ -1,0 +1,24 @@
+{
+  "module": "memory-baseline",
+  "timestamp": "2026-06-26T15:28:47.184Z",
+  "process": {
+    "pid": 19664,
+    "platform": "win32",
+    "nodeVersion": "v24.14.1"
+  },
+  "backend": {
+    "pid": "20452",
+    "method": "netstat (LISTENING)"
+  },
+  "memory": {
+    "rssMB": 44.7,
+    "heapTotalMB": 6.07,
+    "heapUsedMB": 3.94,
+    "externalMB": 1.39
+  },
+  "cpu": {
+    "userMs": 0,
+    "systemMs": 31
+  },
+  "openHandles": 0
+}

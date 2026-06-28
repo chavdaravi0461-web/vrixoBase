@@ -1,0 +1,350 @@
+{
+  "certification": {
+    "version": "0.1.0",
+    "generatedAt": "2026-06-26T15:29:47.610Z",
+    "durationMs": 62223,
+    "status": "certified",
+    "summary": {
+      "allPassed": true,
+      "smokePassed": true,
+      "runtimeHealthy": true
+    }
+  },
+  "runtime": {
+    "status": "healthy",
+    "uptimeSeconds": 0,
+    "liveness": "alive",
+    "readiness": "ready",
+    "timestamp": "2026-06-26T15:29:47.610Z"
+  },
+  "deployment": {
+    "baseUrl": "http://localhost:4001/api",
+    "version": "0.1.0",
+    "buildTime": "2026-06-26T15:28:46.502Z",
+    "git": {
+      "commit": "e33dc470239e7745ba8312f435adeb2637e582f5",
+      "branch": "main",
+      "tag": "\"\"",
+      "message": "feat: Initial VrixoBase source code",
+      "author": "chavda ravi",
+      "date": "2026-06-26T19:09:52+05:30"
+    }
+  },
+  "health": {
+    "status": "healthy",
+    "dependencies": {
+      "database": {
+        "status": "healthy",
+        "latencyMs": 13,
+        "error": null
+      },
+      "redis": {
+        "status": "healthy",
+        "latencyMs": 10,
+        "error": null
+      },
+      "minio": {
+        "status": "healthy",
+        "latencyMs": 7,
+        "error": null
+      },
+      "storage": {
+        "status": "healthy",
+        "latencyMs": 9,
+        "error": null
+      },
+      "realtime": {
+        "status": "healthy",
+        "latencyMs": 10,
+        "error": null
+      },
+      "ai": {
+        "status": "degraded",
+        "latencyMs": 0,
+        "error": "OPENAI_API_KEY not configured"
+      }
+    }
+  },
+  "smokeTests": {
+    "passed": true,
+    "output": "\n\u001b[36m\u001b[1m═══════════════════════════════════════\u001b[0m\n  Smoke Tests: \u001b[32m36 passed\u001b[0m, \u001b[31m0 failed\u001b[0m, 0.9s\n\u001b[36m\u001b[1m═══════════════════════════════════════\u001b[0m\n\n"
+  },
+  "timing": {
+    "module": "startup-timing",
+    "timestamp": "2026-06-26T15:28:47.060Z",
+    "backendUptime": 0,
+    "timings": {
+      "backend": {
+        "label": "Backend Cold Start (estimated from uptime)",
+        "valueMs": "N/A",
+        "source": "backend not running"
+      },
+      "ping": {
+        "label": "Simple Ping",
+        "avgMs": "2.7",
+        "minMs": "2.0",
+        "maxMs": "3.9",
+        "trials": [
+          3.9414,
+          2.2694,
+          1.9791
+        ]
+      },
+      "fullHealth": {
+        "label": "Full Health Check",
+        "avgMs": "7.4",
+        "minMs": "6.9",
+        "maxMs": "8.0",
+        "trials": [
+          7.2098,
+          7.9938,
+          6.872
+        ]
+      },
+      "database": {
+        "label": "Database Connection Time (from health check)",
+        "avgMs": "3ms",
+        "source": "/api/health"
+      },
+      "redis": {
+        "label": "Redis Connection Time (from health check)",
+        "avgMs": "5ms",
+        "source": "/api/health"
+      },
+      "minio": {
+        "label": "MinIO Connection Time (from health check)",
+        "avgMs": "2ms",
+        "source": "/api/health"
+      }
+    }
+  },
+  "memory": {
+    "module": "memory-baseline",
+    "timestamp": "2026-06-26T15:28:47.184Z",
+    "process": {
+      "pid": 19664,
+      "platform": "win32",
+      "nodeVersion": "v24.14.1"
+    },
+    "backend": {
+      "pid": "20452",
+      "method": "netstat (LISTENING)"
+    },
+    "memory": {
+      "rssMB": 44.7,
+      "heapTotalMB": 6.07,
+      "heapUsedMB": 3.94,
+      "externalMB": 1.39
+    },
+    "cpu": {
+      "userMs": 0,
+      "systemMs": 31
+    },
+    "openHandles": 0
+  },
+  "dependencies": {
+    "module": "dependency-audit",
+    "passed": 5,
+    "failed": 3,
+    "results": [
+      {
+        "name": "no duplicate packages (backend)",
+        "pass": true,
+        "detail": "clean"
+      },
+      {
+        "name": "no duplicate packages (root)",
+        "pass": true,
+        "detail": "clean"
+      },
+      {
+        "name": "no high/critical vulnerabilities (backend)",
+        "pass": false,
+        "detail": "# npm audit report\n\n@nestjs/core  <=11.1.17\nSeverity: moderate\nDepends on vulner"
+      },
+      {
+        "name": "no high/critical vulnerabilities (root)",
+        "pass": false,
+        "detail": "# npm audit report\n\n@nestjs/core  <=11.1.17\nSeverity: moderate\nDepends on vulner"
+      },
+      {
+        "name": "circular dependency check (tsconfig allowsIt)",
+        "pass": true,
+        "detail": "not checked by tsc"
+      },
+      {
+        "name": "no orphan modules (backend)",
+        "pass": true,
+        "detail": "clean"
+      },
+      {
+        "name": "package-lock.json exists (backend)",
+        "pass": false,
+        "detail": "missing"
+      },
+      {
+        "name": "package-lock.json exists (root)",
+        "pass": true,
+        "detail": "found"
+      }
+    ]
+  },
+  "rollback": {
+    "module": "rollback",
+    "passed": 14,
+    "failed": 4,
+    "results": [
+      {
+        "name": "git repository exists",
+        "pass": true,
+        "detail": "commits: 1"
+      },
+      {
+        "name": "git has at least 3 commits",
+        "pass": false,
+        "detail": "count=1"
+      },
+      {
+        "name": "HEAD is reachable",
+        "pass": true,
+        "detail": "e33dc470"
+      },
+      {
+        "name": "migrations directory exists",
+        "pass": false,
+        "detail": "found 0 migration(s)"
+      },
+      {
+        "name": "migration SQL available for rollback",
+        "pass": false,
+        "detail": "none"
+      },
+      {
+        "name": "current build exists",
+        "pass": true,
+        "detail": "backend/build/"
+      },
+      {
+        "name": "previous build backup exists",
+        "pass": false,
+        "detail": "not present"
+      },
+      {
+        "name": ".env file exists (can be preserved across deployments)",
+        "pass": true,
+        "detail": "found"
+      },
+      {
+        "name": ".env.example exists (can regenerate .env)",
+        "pass": true,
+        "detail": "found"
+      },
+      {
+        "name": "Scenario A: package.json parsable (deployment check)",
+        "pass": true,
+        "detail": "vrixobase"
+      },
+      {
+        "name": "Scenario B: prisma schema exists (can regenerate DB schema)",
+        "pass": true,
+        "detail": "schema: 13752B"
+      },
+      {
+        "name": "Scenario C: health endpoints available (startup probe)",
+        "pass": true,
+        "detail": "liveness, readiness, startup endpoints"
+      },
+      {
+        "name": "rollback strategy defined",
+        "pass": true,
+        "detail": "5 strategies"
+      },
+      {
+        "name": "  strategy: git checkout <previous-commit> && npm run build...",
+        "pass": true,
+        "detail": "available"
+      },
+      {
+        "name": "  strategy: git revert HEAD && npm run build...",
+        "pass": true,
+        "detail": "available"
+      },
+      {
+        "name": "  strategy: prisma db push --force-reset (for schema rollback)...",
+        "pass": true,
+        "detail": "available"
+      },
+      {
+        "name": "  strategy: restore backend/build.prev/ to backend/build/...",
+        "pass": true,
+        "detail": "available"
+      },
+      {
+        "name": "  strategy: git stash && git checkout <tag> && npm run setup...",
+        "pass": true,
+        "detail": "available"
+      }
+    ]
+  },
+  "releaseReport": {
+    "release": {
+      "version": "0.1.0",
+      "buildTime": "2026-06-26T15:28:46.502Z",
+      "generatedAt": "2026-06-26T15:28:46.869Z"
+    },
+    "git": {
+      "commit": "e33dc470239e7745ba8312f435adeb2637e582f5",
+      "branch": "main",
+      "tag": "\"\"",
+      "message": "feat: Initial VrixoBase source code",
+      "author": "chavda ravi",
+      "date": "2026-06-26T19:09:52+05:30"
+    },
+    "deployment": {
+      "baseUrl": "http://localhost:4001/api",
+      "status": "healthy",
+      "uptime": 0
+    },
+    "health": {
+      "status": "healthy",
+      "liveness": "alive",
+      "readiness": "ready"
+    },
+    "dependencies": {
+      "database": {
+        "status": "healthy",
+        "latencyMs": 5,
+        "error": null
+      },
+      "redis": {
+        "status": "healthy",
+        "latencyMs": 6,
+        "error": null
+      },
+      "minio": {
+        "status": "healthy",
+        "latencyMs": 2,
+        "error": null
+      },
+      "storage": {
+        "status": "healthy",
+        "latencyMs": 2,
+        "error": null
+      },
+      "realtime": {
+        "status": "healthy",
+        "latencyMs": 5,
+        "error": null
+      },
+      "ai": {
+        "status": "degraded",
+        "latencyMs": 0,
+        "error": "OPENAI_API_KEY not configured"
+      }
+    },
+    "runtime": {
+      "verification": "passed",
+      "timestamp": "2026-06-26T15:28:46.869Z"
+    }
+  }
+}

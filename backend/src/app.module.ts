@@ -7,14 +7,17 @@ import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { CsrfGuard } from './common/guards/csrf.guard';
 import { PrismaModule } from './common/prisma/prisma.module';
+import { TenancyModule } from './modules/tenancy/tenancy.module';
 import { DatabaseModule } from './modules/database/database.module';
 import { ApiGeneratorModule } from './modules/api-generator/api-generator.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { FunctionsModule } from './modules/functions/functions.module';
+import { ScheduledJobsModule } from './modules/scheduled-jobs/scheduled-jobs.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
 import { SecurityModule } from './modules/security/security.module';
 import { ProjectModule } from './modules/project/project.module';
+import { RlsModule } from './modules/rls/rls.module';
 import { TeamModule } from './modules/team/team.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { HealthModule } from './modules/health/health.module';
@@ -40,6 +43,8 @@ import { AiModule } from './modules/ai/ai.module';
     }),
     ScheduleModule.forRoot(),
     PrismaModule,
+    TenancyModule,
+    RlsModule,
     AuthModule,
     DatabaseModule,
     ApiGeneratorModule,
@@ -53,6 +58,7 @@ import { AiModule } from './modules/ai/ai.module';
     AuditModule,
     HealthModule,
     AiModule,
+    ScheduledJobsModule,
   ],
   providers: [
     {

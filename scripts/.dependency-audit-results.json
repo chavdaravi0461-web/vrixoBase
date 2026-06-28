@@ -1,0 +1,47 @@
+{
+  "module": "dependency-audit",
+  "passed": 5,
+  "failed": 3,
+  "results": [
+    {
+      "name": "no duplicate packages (backend)",
+      "pass": true,
+      "detail": "clean"
+    },
+    {
+      "name": "no duplicate packages (root)",
+      "pass": true,
+      "detail": "clean"
+    },
+    {
+      "name": "no high/critical vulnerabilities (backend)",
+      "pass": false,
+      "detail": "# npm audit report\n\n@nestjs/core  <=11.1.17\nSeverity: moderate\nDepends on vulner"
+    },
+    {
+      "name": "no high/critical vulnerabilities (root)",
+      "pass": false,
+      "detail": "# npm audit report\n\n@nestjs/core  <=11.1.17\nSeverity: moderate\nDepends on vulner"
+    },
+    {
+      "name": "circular dependency check (tsconfig allowsIt)",
+      "pass": true,
+      "detail": "not checked by tsc"
+    },
+    {
+      "name": "no orphan modules (backend)",
+      "pass": true,
+      "detail": "clean"
+    },
+    {
+      "name": "package-lock.json exists (backend)",
+      "pass": false,
+      "detail": "missing"
+    },
+    {
+      "name": "package-lock.json exists (root)",
+      "pass": true,
+      "detail": "found"
+    }
+  ]
+}

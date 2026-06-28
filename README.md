@@ -307,8 +307,8 @@ VrixoBase frontend (Next.js) can be deployed to Vercel. The NestJS backend requi
    |---|---|
    | Root Directory | `frontend` |
    | Framework | Next.js |
-   | Build Command | `npm run vercel-build` (set in `vercel.json`) |
-   | Output Directory | `build` (set in `vercel.json`) |
+   | Build Command | `npm run vercel-build` |
+   | Output Directory | `.next` (Next.js default) |
 
 3. **Add environment variables** — copy from `frontend/.env.vercel` to Vercel project settings:
 

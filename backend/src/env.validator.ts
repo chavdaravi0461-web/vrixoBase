@@ -31,6 +31,10 @@ const envSchema = z.object({
 
   THROTTLE_TTL: z.string().regex(/^\d+$/).default('60'),
   THROTTLE_LIMIT: z.string().regex(/^\d+$/).default('100'),
+
+  REALTIME_PUBLICATION: z.string().default('vrixobase_realtime'),
+  REALTIME_SLOT: z.string().default('vrixobase_cdc_slot'),
+  REALTIME_START_LSN: z.string().default('0/0'),
 });
 
 export type ValidatedEnv = z.infer<typeof envSchema>;

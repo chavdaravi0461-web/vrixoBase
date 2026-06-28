@@ -1,0 +1,97 @@
+{
+  "module": "rollback",
+  "passed": 14,
+  "failed": 4,
+  "results": [
+    {
+      "name": "git repository exists",
+      "pass": true,
+      "detail": "commits: 1"
+    },
+    {
+      "name": "git has at least 3 commits",
+      "pass": false,
+      "detail": "count=1"
+    },
+    {
+      "name": "HEAD is reachable",
+      "pass": true,
+      "detail": "e33dc470"
+    },
+    {
+      "name": "migrations directory exists",
+      "pass": false,
+      "detail": "found 0 migration(s)"
+    },
+    {
+      "name": "migration SQL available for rollback",
+      "pass": false,
+      "detail": "none"
+    },
+    {
+      "name": "current build exists",
+      "pass": true,
+      "detail": "backend/build/"
+    },
+    {
+      "name": "previous build backup exists",
+      "pass": false,
+      "detail": "not present"
+    },
+    {
+      "name": ".env file exists (can be preserved across deployments)",
+      "pass": true,
+      "detail": "found"
+    },
+    {
+      "name": ".env.example exists (can regenerate .env)",
+      "pass": true,
+      "detail": "found"
+    },
+    {
+      "name": "Scenario A: package.json parsable (deployment check)",
+      "pass": true,
+      "detail": "vrixobase"
+    },
+    {
+      "name": "Scenario B: prisma schema exists (can regenerate DB schema)",
+      "pass": true,
+      "detail": "schema: 13752B"
+    },
+    {
+      "name": "Scenario C: health endpoints available (startup probe)",
+      "pass": true,
+      "detail": "liveness, readiness, startup endpoints"
+    },
+    {
+      "name": "rollback strategy defined",
+      "pass": true,
+      "detail": "5 strategies"
+    },
+    {
+      "name": "  strategy: git checkout <previous-commit> && npm run build...",
+      "pass": true,
+      "detail": "available"
+    },
+    {
+      "name": "  strategy: git revert HEAD && npm run build...",
+      "pass": true,
+      "detail": "available"
+    },
+    {
+      "name": "  strategy: prisma db push --force-reset (for schema rollback)...",
+      "pass": true,
+      "detail": "available"
+    },
+    {
+      "name": "  strategy: restore backend/build.prev/ to backend/build/...",
+      "pass": true,
+      "detail": "available"
+    },
+    {
+      "name": "  strategy: git stash && git checkout <tag> && npm run setup...",
+      "pass": true,
+      "detail": "available"
+    }
+  ]
+}

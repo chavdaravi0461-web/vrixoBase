@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { RlsPolicyEngineService } from '../rls/rls-policy-engine.service';
 import { requireProjectMembership } from '../../common/authorization/helpers';
 import { CreatePolicyDto } from './dto/create-policy.dto';
 import { CreateSecretDto } from './dto/create-secret.dto';
@@ -22,7 +23,10 @@ export class SecurityService {
   private encryptionKey: Buffer;
   private keyVersion = 1;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly rlsPolicyEngine: RlsPolicyEngineService,
+  ) {
     this.initializeEncryptionKey();
   }
 
@@ -61,6 +65,17 @@ export class SecurityService {
       },
     });
 
+    await this.rlsPolicyEngine.applyPolicy({
+      projectId,
+      tableName: dto.tableName,
+      name: dto.name,
+      definition: dto.definition,
+      roles: dto.roles ?? ['authenticated'],
+      status: 'active',
+    }).catch((err: Error) => {
+      this.logger.error(`Failed to apply RLS policy to PostgreSQL: ${err.message}`);
+    });
+
     await this.prisma.auditLog.create({
       data: {
         action: 'create',
@@ -89,6 +104,10 @@ export class SecurityService {
     if (!policy) throw new NotFoundException('Policy not found');
 
     await requireProjectMembership(this.prisma, policy.projectId, userId);
+
+    await this.rlsPolicyEngine.removePolicy(policy).catch((err: Error) => {
+      this.logger.error(`Failed to remove RLS policy from PostgreSQL: ${err.message}`);
+    });
 
     await this.prisma.policy.delete({ where: { id } });
 

@@ -154,8 +154,18 @@ export class FunctionsService {
       },
     });
 
+    const injectedSecrets = await this.loadProjectSecrets(projectId);
+
+    const mergedEnv: Record<string, string> = {
+      ...injectedSecrets,
+      ...(func.environment as Record<string, string> | undefined),
+    };
+
     try {
-      const result = await this.runInIsolatedProcess(func as { sourceCode: string; timeout: number; handler: string; environment?: Record<string, string> | null }, dto.payload ?? {});
+      const result = await this.runInIsolatedProcess(
+        { ...func, environment: mergedEnv } as { sourceCode: string; timeout: number; handler: string; environment?: Record<string, string> | null },
+        dto.payload ?? {},
+      );
       const duration = Date.now() - startTime;
 
       await this.prisma.functionExecution.update({
@@ -253,6 +263,44 @@ export class FunctionsService {
         reject(err);
       });
     });
+  }
+
+  private async loadProjectSecrets(projectId: string): Promise<Record<string, string>> {
+    try {
+      const secrets = await this.prisma.secret.findMany({
+        where: { projectId },
+      });
+
+      const env: Record<string, string> = {};
+      for (const secret of secrets) {
+        const name = secret.name.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+        try {
+          const { encrypted, iv, tag } = JSON.parse(secret.value);
+          const crypto = require('crypto');
+          const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
+          const KEY_LENGTH = 32;
+          const encryptionKey = crypto.scryptSync(
+            this.prisma ? 'vrixo-key' : 'fallback',
+            'salt',
+            KEY_LENGTH,
+          );
+          const decipher = crypto.createDecipheriv(
+            ENCRYPTION_ALGORITHM,
+            encryptionKey,
+            Buffer.from(iv, 'hex'),
+          );
+          decipher.setAuthTag(Buffer.from(tag, 'hex'));
+          let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+          decrypted += decipher.final('utf8');
+          env[name] = decrypted;
+        } catch {
+          env[name] = '***REDACTED***';
+        }
+      }
+      return env;
+    } catch {
+      return {};
+    }
   }
 
   private async writeFunctionFile(id: string, sourceCode: string) {

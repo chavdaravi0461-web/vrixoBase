@@ -161,4 +161,59 @@ export class StorageController {
   ) {
     return this.storageService.createFolder(bucketId, dto.path, req?.user?.id);
   }
+
+  @Post('buckets/:bucketId/signed-upload-url')
+  @ApiOperation({ summary: 'Get a signed URL for direct file upload from browser' })
+  @ApiParam({ name: 'bucketId', type: String })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        fileName: { type: 'string' },
+        mimeType: { type: 'string' },
+        expiresIn: { type: 'number' },
+      },
+    },
+  })
+  async getSignedUploadUrl(
+    @Param('bucketId') bucketId: string,
+    @Body() body: { fileName: string; mimeType: string; expiresIn?: number },
+    @Req() req?: any,
+  ) {
+    return this.storageService.getSignedUploadUrl(
+      bucketId,
+      body.fileName,
+      body.mimeType,
+      body.expiresIn ?? 3600,
+      req?.user?.id,
+    );
+  }
+
+  @Post(':projectId/check-rls')
+  @ApiOperation({ summary: 'Check RLS policy for a storage operation' })
+  @ApiParam({ name: 'projectId', type: String })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        bucketId: { type: 'string' },
+        filePath: { type: 'string' },
+        action: { type: 'string', enum: ['select', 'insert', 'update', 'delete'] },
+      },
+    },
+  })
+  async checkStorageRls(
+    @Param('projectId') projectId: string,
+    @Body() body: { bucketId: string; filePath: string; action: 'select' | 'insert' | 'update' | 'delete' },
+    @Req() req?: any,
+  ) {
+    const allowed = await this.storageService.checkStorageRls(
+      projectId,
+      body.bucketId,
+      body.filePath,
+      body.action,
+      req?.user?.id,
+    );
+    return { allowed };
+  }
 }
