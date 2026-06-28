@@ -15,6 +15,8 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'swap',
 });
 
+const url = 'https://vrixo-base-frontend.vercel.app';
+
 export const metadata: Metadata = {
   title: {
     default: 'VrixoBase - Backend Infrastructure Platform',
@@ -22,6 +24,29 @@ export const metadata: Metadata = {
   },
   description:
     'Build and scale your applications with VrixoBase - Database, API, Storage, Realtime, and Functions.',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+  },
+  openGraph: {
+    title: 'VrixoBase - Backend Infrastructure Platform',
+    description:
+      'Build and scale your applications with VrixoBase - Database, API, Storage, Realtime, and Functions.',
+    url,
+    siteName: 'VrixoBase',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'VrixoBase - Backend Infrastructure Platform',
+    description:
+      'Build and scale your applications with VrixoBase - Database, API, Storage, Realtime, and Functions.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  metadataBase: new URL(url),
 };
 
 export default function RootLayout({

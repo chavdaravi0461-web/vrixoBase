@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Hexagon } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
+import { getApiBaseUrl } from '@/lib/api/client';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -25,18 +26,16 @@ export default function AuthCallbackPage() {
       }
 
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || ''}/api/auth/me`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
+        const res = await fetch(`${getApiBaseUrl()}/api/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
 
         if (!res.ok) throw new Error('Failed to fetch user data');
 
-        const user = await res.json();
+        const body = await res.json();
+        const user = body.data ?? body;
         login(user, accessToken, refreshToken);
         router.push('/dashboard');
       } catch {

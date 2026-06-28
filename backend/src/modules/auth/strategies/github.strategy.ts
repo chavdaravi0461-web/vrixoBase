@@ -10,7 +10,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
     super({
       clientID: clientID || 'unconfigured',
       clientSecret: clientID ? (configService?.get<string>('GITHUB_CLIENT_SECRET') || '') : 'unconfigured',
-      callbackURL: configService?.get<string>('GITHUB_CALLBACK_URL') || 'http://localhost:4000/api/auth/github/callback',
+      callbackURL: configService?.get<string>('GITHUB_CALLBACK_URL') || 'https://vrixobase-api.onrender.com/api/auth/github/callback',
       scope: ['user:email'],
     });
   }

@@ -10,7 +10,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     super({
       clientID: clientID || 'unconfigured',
       clientSecret: clientID ? (configService?.get<string>('GOOGLE_CLIENT_SECRET') || '') : 'unconfigured',
-      callbackURL: configService?.get<string>('GOOGLE_CALLBACK_URL') || 'http://localhost:4000/api/auth/google/callback',
+      callbackURL: configService?.get<string>('GOOGLE_CALLBACK_URL') || 'https://vrixobase-api.onrender.com/api/auth/google/callback',
       scope: ['email', 'profile'],
     });
   }

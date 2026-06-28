@@ -2,30 +2,10 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { getApiBaseUrl } from '@/lib/api/client';
 
-const OAUTH_WINDOW_WIDTH = 600;
-const OAUTH_WINDOW_HEIGHT = 700;
-
-function openOAuthPopup(url: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const left = window.screen.width / 2 - OAUTH_WINDOW_WIDTH / 2;
-    const top = window.screen.height / 2 - OAUTH_WINDOW_HEIGHT / 2;
-    const popup = window.open(
-      url,
-      'oauth',
-      `width=${OAUTH_WINDOW_WIDTH},height=${OAUTH_WINDOW_HEIGHT},left=${left},top=${top},popup=1`
-    );
-    if (!popup) {
-      reject(new Error('Popup blocked. Please allow popups for this site.'));
-      return;
-    }
-    const pollTimer = window.setInterval(() => {
-      if (popup.closed) {
-        window.clearInterval(pollTimer);
-        resolve();
-      }
-    }, 500);
-  });
+function startOAuth(provider: 'google' | 'github') {
+  window.location.assign(`${getApiBaseUrl()}/api/auth/${provider}`);
 }
 
 interface OAuthButtonProps {
@@ -40,12 +20,9 @@ function GoogleButton({ isLoading, onError }: OAuthButtonProps) {
   const handleClick = async () => {
     setLocalLoading(true);
     try {
-      await openOAuthPopup(
-        `${process.env.NEXT_PUBLIC_API_URL || ''}/api/auth/google`
-      );
+      startOAuth('google');
     } catch (err) {
       onError?.(err instanceof Error ? err.message : 'OAuth failed');
-    } finally {
       setLocalLoading(false);
     }
   };
@@ -91,12 +68,9 @@ function GitHubButton({ isLoading, onError }: OAuthButtonProps) {
   const handleClick = async () => {
     setLocalLoading(true);
     try {
-      await openOAuthPopup(
-        `${process.env.NEXT_PUBLIC_API_URL || ''}/api/auth/github`
-      );
+      startOAuth('github');
     } catch (err) {
       onError?.(err instanceof Error ? err.message : 'OAuth failed');
-    } finally {
       setLocalLoading(false);
     }
   };
