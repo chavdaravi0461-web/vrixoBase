@@ -95,19 +95,7 @@ export class HealthService {
 
   async checkMinio(): Promise<HealthCheckResult> {
     const start = Date.now();
-    try {
-      const endpoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost');
-      const useSSL = this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true';
-      const protocol = useSSL ? 'https' : 'http';
-      const port = this.configService.get<string>('MINIO_PORT', useSSL ? '' : '9000');
-      const hostPort = port ? `${endpoint}:${port}` : endpoint;
-      const url = `${protocol}://${hostPort}/minio/health/live`;
-      const result = await fetch(url, { signal: AbortSignal.timeout(3000) });
-      if (result.ok) {
-        return { status: 'healthy', latencyMs: Date.now() - start };
-      }
-      return { status: 'unhealthy', latencyMs: Date.now() - start, error: `MinIO health returned ${result.status}` };
-    } catch {
+    const checkViaS3Api = async (): Promise<HealthCheckResult> => {
       try {
         const client = new Minio.Client({
           endPoint: this.configService.get<string>('MINIO_ENDPOINT', 'localhost'),
@@ -121,7 +109,24 @@ export class HealthService {
       } catch (err2) {
         return { status: 'unhealthy', latencyMs: Date.now() - start, error: (err2 as Error).message };
       }
+    };
+
+    try {
+      const endpoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost');
+      const useSSL = this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true';
+      const protocol = useSSL ? 'https' : 'http';
+      const port = this.configService.get<string>('MINIO_PORT', useSSL ? '' : '9000');
+      const hostPort = port ? `${endpoint}:${port}` : endpoint;
+      const url = `${protocol}://${hostPort}/minio/health/live`;
+      const result = await fetch(url, { signal: AbortSignal.timeout(3000) });
+      if (result.ok) {
+        return { status: 'healthy', latencyMs: Date.now() - start };
+      }
+    } catch {
+      // MinIO health endpoint failed — fall through to S3 API check
     }
+
+    return checkViaS3Api();
   }
 
   async checkStorage(): Promise<HealthCheckResult> {
