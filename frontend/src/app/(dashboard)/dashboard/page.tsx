@@ -26,7 +26,8 @@ import { Separator } from '@/components/ui/separator';
 import { PageLoading } from '@/components/common/loading-spinner';
 import { useAuthStore } from '@/stores/auth-store';
 import { useProjectStore } from '@/stores/project-store';
-import { useProjects, useCreateProject } from '@/hooks/use-projects';
+import { useProjects } from '@/hooks/use-projects';
+import { CreateProjectDialog } from '@/components/dashboard/create-project-dialog';
 import { formatNumber, timeAgo, getInitials } from '@/lib/utils';
 import type { RecentActivity } from '@/types/project';
 
@@ -49,7 +50,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const { setCurrentProject } = useProjectStore();
-  const createProject = useCreateProject();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const { data: projects, isLoading, error } = useProjects();
 
@@ -71,6 +72,7 @@ export default function DashboardPage() {
   if (error) return <div className="text-destructive text-sm p-4">Failed to load projects.</div>;
 
   return (
+    <>
     <div className="space-y-8">
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -80,7 +82,7 @@ export default function DashboardPage() {
           title={`Welcome back${user?.name ? `, ${user.name.split(' ')[0]}` : ''}`}
           description="Here's an overview of your projects and usage"
           actions={
-            <Button className="gap-2" onClick={() => createProject.mutate({ name: 'New Project' }, { onSuccess: (p) => { setCurrentProject(p); router.push('/database'); } })}>
+            <Button className="gap-2" onClick={() => setShowCreateDialog(true)}>
               <Plus className="h-4 w-4" />
               New Project
             </Button>
@@ -143,7 +145,7 @@ export default function DashboardPage() {
             title="No projects yet"
             description="Create your first project to get started with VrixoBase."
             actionLabel="Create Project"
-            onAction={() => createProject.mutate({ name: 'My First Project' }, { onSuccess: (p) => { setCurrentProject(p); router.push('/database'); } })}
+            onAction={() => setShowCreateDialog(true)}
           />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -221,7 +223,7 @@ export default function DashboardPage() {
               transition={{ delay: 0.05 * projectList.length }}
             >
               <button
-                onClick={() => createProject.mutate({ name: 'New Project' }, { onSuccess: (p) => { setCurrentProject(p); router.push('/database'); } })}
+                onClick={() => setShowCreateDialog(true)}
                 className="w-full h-full rounded-xl border-2 border-dashed border-border/60 hover:border-primary/40 transition-all duration-200 flex flex-col items-center justify-center gap-2 p-8 group"
               >
                 <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-muted group-hover:bg-primary/10 transition-colors">
@@ -288,5 +290,8 @@ export default function DashboardPage() {
         </Card>
       </motion.div>
     </div>
+
+      <CreateProjectDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
+    </>
   );
 }
