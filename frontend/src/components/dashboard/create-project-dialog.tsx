@@ -11,6 +11,9 @@ import {
   EyeOff,
   Database,
   Globe,
+  Copy,
+  Check,
+  Key,
 } from 'lucide-react';
 import {
   Dialog,
@@ -33,6 +36,7 @@ import {
 import { useAuthStore } from '@/stores/auth-store';
 import { useCreateProject } from '@/hooks/use-projects';
 import { useProjectStore } from '@/stores/project-store';
+import { toast } from 'sonner';
 
 const regions = [
   { value: 'us-east-1', label: 'US East (N. Virginia)' },
@@ -72,6 +76,8 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
   const [autoExposeTables, setAutoExposeTables] = useState(false);
   const [enableRls, setEnableRls] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [createdApiKey, setCreatedApiKey] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const canSubmit = name.trim().length > 0;
 
@@ -84,18 +90,96 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
         region,
       },
       {
-        onSuccess: (p) => {
-          setCurrentProject(p);
-          onOpenChange(false);
-          router.push('/dashboard');
+        onSuccess: (p: any) => {
+          if (p?.apiKey?.key) {
+            setCreatedApiKey(p.apiKey.key);
+          } else {
+            setCurrentProject(p);
+            onOpenChange(false);
+            router.push('/dashboard');
+          }
         },
       }
     );
   };
 
+  const handleCopyKey = async () => {
+    if (!createdApiKey) return;
+    await navigator.clipboard.writeText(createdApiKey);
+    setCopied(true);
+    toast.success('API key copied to clipboard');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDone = () => {
+    onOpenChange(false);
+    setCreatedApiKey(null);
+    setCopied(false);
+    router.push('/dashboard');
+  };
+
+  const reset = () => {
+    setName('');
+    setPassword('');
+    setShowPassword(false);
+    setRegion('ap-southeast-1');
+    setEnableDataApi(true);
+    setAutoExposeTables(false);
+    setEnableRls(true);
+    setShowAdvanced(false);
+    setCreatedApiKey(null);
+    setCopied(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) reset();
+        onOpenChange(v);
+      }}
+    >
       <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+        {createdApiKey ? (
+          <div className="py-6 space-y-6">
+            <div className="flex flex-col items-center text-center space-y-3">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
+                <Key className="h-6 w-6 text-primary" />
+              </div>
+              <DialogTitle className="text-lg">Project created!</DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground max-w-sm">
+                Your project is ready. Here is your API key — copy it now. You
+                won't be able to see it again.
+              </DialogDescription>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground font-medium">
+                Your API key
+              </Label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 font-mono text-xs bg-muted/50 border border-border/60 rounded-lg px-3 py-2.5 truncate select-all">
+                  {createdApiKey}
+                </div>
+                <Button size="icon" variant="outline" onClick={handleCopyKey}>
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Use this key in the <code className="text-xs bg-muted/50 px-1 rounded">x-api-key</code> header to authenticate API requests.
+              </p>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-border/60">
+              <Button onClick={handleDone}>Done</Button>
+            </div>
+          </div>
+        ) : (
+        <>
         <DialogHeader>
           <DialogTitle className="text-lg">Create a new project</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
@@ -308,6 +392,8 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
             </Button>
           </div>
         </div>
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );

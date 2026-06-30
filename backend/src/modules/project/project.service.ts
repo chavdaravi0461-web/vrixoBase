@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TenancyService } from '../tenancy/tenancy.service';
+import { ApiKeysService } from '../api-generator/api-keys.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 
 type PrismaUniqueConstraintError = {
@@ -23,6 +24,7 @@ export class ProjectService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenancy: TenancyService,
+    private readonly apiKeysService: ApiKeysService,
   ) {}
 
   async create(dto: CreateProjectDto, userId: string) {
@@ -95,7 +97,13 @@ export class ProjectService {
       },
     });
 
-    return project;
+    const apiKey = await this.apiKeysService.createApiKey(
+      project.id,
+      { name: `${project.name} API Key` },
+      userId,
+    );
+
+    return { ...project, apiKey };
   }
 
   private isUniqueConstraintError(error: unknown, field: string) {
