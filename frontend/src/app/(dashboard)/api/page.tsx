@@ -380,6 +380,18 @@ export default function ApiPage() {
   const [showCreatePublic, setShowCreatePublic] = useState(false);
   const [showCreateSecret, setShowCreateSecret] = useState(false);
   const [showRevokeDialog, setShowRevokeDialog] = useState<string | null>(null);
+  const [urlCopied, setUrlCopied] = useState(false);
+
+  const vrixobaseUrl = typeof window !== 'undefined'
+    ? window.location.origin
+    : process.env.NEXT_PUBLIC_VRIXOBASE_URL || 'https://vrixo-base-frontend.vercel.app';
+
+  const handleCopyUrl = async () => {
+    await navigator.clipboard.writeText(vrixobaseUrl);
+    setUrlCopied(true);
+    toast.success('URL copied');
+    setTimeout(() => setUrlCopied(false), 2000);
+  };
 
   const handleRevokeKey = (id: string) => {
     revokeKey.mutate(id, {
@@ -413,6 +425,25 @@ export default function ApiPage() {
           <BookOpen className="h-4 w-4" />
           Docs
         </a>
+      </div>
+
+      {/* Project URL */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Project URL</span>
+            <code className="text-xs font-mono text-foreground bg-muted/50 px-2 py-1 rounded">
+              {vrixobaseUrl}
+            </code>
+          </div>
+          <button
+            onClick={handleCopyUrl}
+            className="flex items-center gap-1 text-xs text-primary hover:underline"
+          >
+            {urlCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            {urlCopied ? 'Copied' : 'Copy'}
+          </button>
+        </div>
       </div>
 
       {/* Info banner */}
