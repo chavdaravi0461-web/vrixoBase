@@ -89,6 +89,20 @@ export class RlsSessionMiddleware implements NestMiddleware {
   private async resolveApiKeyIdentity(
     key: string,
   ): Promise<{ userId: string | null; userRole: string | null; projectId: string } | null> {
+    if (key.startsWith('eyJ')) {
+      try {
+        const secret = this.configService.get<string>('JWT_ACCESS_SECRET', 'access-secret');
+        const payload = this.jwtService.verify(key, { secret }) as any;
+        const role = payload.role;
+        if ((role === 'anon' || role === 'service_role') && payload.projectId) {
+          return { userId: null, userRole: role, projectId: payload.projectId };
+        }
+      } catch {
+        return null;
+      }
+      return null;
+    }
+
     if (!key.startsWith('vb_')) return null;
 
     const crypto = require('crypto');

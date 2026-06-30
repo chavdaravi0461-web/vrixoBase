@@ -7,11 +7,13 @@ import {
   Body,
   Param,
   Req,
+  Headers,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { ProjectService } from './project.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { Public } from '../auth/decorators/public.decorator';
 
 @ApiTags('Projects')
 @ApiBearerAuth('JWT-auth')
@@ -82,5 +84,29 @@ export class ProjectController {
   ) {
     const userId = (req.user as Record<string, string>)?.id;
     return this.projectService.getStats(id, userId);
+  }
+
+  @Public()
+  @Get(':id/config')
+  @ApiOperation({ summary: 'Get project public config (URL + anon key) for client SDKs' })
+  @ApiParam({ name: 'id', type: String })
+  async getConfig(
+    @Param('id') id: string,
+    @Headers('origin') origin?: string,
+  ) {
+    const project = await this.projectService.get(id);
+
+    const frontendUrl = this.projectService.getFrontendUrl();
+    const { anonKey } = this.projectService.generateProjectKeys(id);
+
+    return {
+      url: frontendUrl,
+      anonKey,
+      project: {
+        id: project.id,
+        name: project.name,
+        slug: (project as any).slug,
+      },
+    };
   }
 }

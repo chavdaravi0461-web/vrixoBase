@@ -11,6 +11,7 @@ import { PageLoading } from '@/components/common/loading-spinner';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { cn, formatDateTime } from '@/lib/utils';
 import { useApiKeys, useCreateApiKey, useRevokeApiKey } from '@/hooks/use-api-keys';
+import { useProject } from '@/hooks/use-projects';
 import { useProjectStore } from '@/stores/project-store';
 import type { ApiKey } from '@/lib/api/api-keys';
 
@@ -82,6 +83,131 @@ function KeyCard({ apiKey, onRevoke }: KeyCardProps) {
               <span>Last used {formatDateTime(apiKey.lastUsedAt)}</span>
             </>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LegacyKeysSection({ anonKey, serviceRoleKey }: { anonKey: string; serviceRoleKey: string }) {
+  const [anonRevealed, setAnonRevealed] = useState(false);
+  const [srRevealed, setSrRevealed] = useState(false);
+  const [anonCopied, setAnonCopied] = useState(false);
+  const [srCopied, setSrCopied] = useState(false);
+
+  const handleCopy = async (val: string, setCopied: (v: boolean) => void) => {
+    await navigator.clipboard.writeText(val);
+    setCopied(true);
+    toast.success('Copied to clipboard');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="px-5 py-4 border-b border-border">
+        <h2 className="text-sm font-semibold">Legacy API keys</h2>
+      </div>
+      <div className="divide-y divide-border">
+        {/* anon key */}
+        <div className="px-5 py-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <code className="text-xs font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">anon</code>
+                <span className="text-[10px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">public</span>
+              </div>
+              <code className={cn(
+                'text-xs font-mono truncate max-w-[220px] hidden sm:block',
+                anonRevealed ? 'text-foreground break-all max-w-none' : 'text-muted-foreground'
+              )}>
+                {anonRevealed ? anonKey : `${anonKey.substring(0, 40)}...`}
+              </code>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setAnonRevealed(!anonRevealed)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                {anonRevealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                {anonRevealed ? 'Hide' : 'Reveal'}
+              </button>
+              <button
+                onClick={() => handleCopy(anonKey, setAnonCopied)}
+                className="flex items-center gap-1 text-xs text-primary hover:underline"
+              >
+                {anonCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                {anonCopied ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            This key is safe to use in a browser if you have enabled Row Level Security for your tables and configured policies.{' '}
+            <span className="text-primary hover:underline cursor-pointer" onClick={() => toast.info('Prefer using Publishable API keys instead.')}>
+              Prefer using Publishable API keys instead.
+            </span>
+          </p>
+        </div>
+
+        {/* service_role key */}
+        <div className="px-5 py-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <code className="text-xs font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold">service_role</code>
+                <span className="text-[10px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">secret</span>
+              </div>
+              <code className="text-xs font-mono text-muted-foreground select-none">
+                {srRevealed ? serviceRoleKey : `${serviceRoleKey.substring(0, 40)}...`}
+              </code>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSrRevealed(!srRevealed)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                {srRevealed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                {srRevealed ? 'Hide' : 'Reveal'}
+              </button>
+              <button
+                onClick={() => handleCopy(serviceRoleKey, setSrCopied)}
+                className="flex items-center gap-1 text-xs text-primary hover:underline"
+              >
+                {srCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                {srCopied ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            This key has the ability to bypass Row Level Security. Never share it publicly.{' '}
+            If leaked, generate a new JWT secret immediately.{' '}
+            <span className="text-primary hover:underline cursor-pointer" onClick={() => toast.info('Prefer using Secret API keys instead.')}>
+              Prefer using Secret API keys instead.
+            </span>
+          </p>
+        </div>
+
+        {/* Disable legacy keys */}
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Disable legacy API keys</p>
+              <p className="text-xs text-muted-foreground">
+                Make sure you are no longer using your legacy API keys before proceeding.
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" className="sr-only peer" />
+              <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-500" />
+            </label>
+          </div>
+          <div className="flex justify-end">
+            <button
+              onClick={() => toast.info('JWT-based API keys will be disabled in a future update.')}
+              className="px-4 py-2 rounded-lg border border-destructive/30 text-destructive text-sm hover:bg-destructive/10 transition-colors"
+            >
+              Disable JWT-based API keys
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -241,11 +367,15 @@ function CreateKeyModal({ open, onClose, defaultType }: CreateKeyModalProps) {
 export default function ApiPage() {
   const projectId = useProjectStore((s) => s.currentProject?.id);
   const { data: keysData, isLoading, refetch } = useApiKeys(projectId ?? '');
+  const { data: project } = useProject(projectId ?? '');
   const revokeKey = useRevokeApiKey(projectId ?? '');
 
   const keys = keysData || [];
   const publicKeys = keys.filter((k) => k.type === 'PUBLIC');
   const secretKeys = keys.filter((k) => k.type === 'SECRET');
+
+  const anonKey = (project as any)?.anonKey || '';
+  const serviceRoleKey = (project as any)?.serviceRoleKey || '';
 
   const [showCreatePublic, setShowCreatePublic] = useState(false);
   const [showCreateSecret, setShowCreateSecret] = useState(false);
@@ -405,88 +535,7 @@ export default function ApiPage() {
       </div>
 
       {/* Legacy API Keys */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="px-5 py-4 border-b border-border">
-          <h2 className="text-sm font-semibold">Legacy API keys</h2>
-        </div>
-        <div className="divide-y divide-border">
-          {/* anon key */}
-          <div className="px-5 py-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <code className="text-xs font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">anon</code>
-                  <span className="text-[10px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">public</span>
-                </div>
-                <code className="text-xs font-mono text-muted-foreground truncate max-w-[200px] hidden sm:block">
-                  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-                </code>
-              </div>
-              <button className="flex items-center gap-1 text-xs text-primary hover:underline">
-                <Copy className="h-3 w-3" /> Copy
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              This key is safe to use in a browser if you have enabled Row Level Security for your tables and configured policies.{' '}
-              <span className="text-primary hover:underline cursor-pointer" onClick={() => toast.info('Prefer using Publishable API keys instead.')}>
-                Prefer using Publishable API keys instead.
-              </span>
-            </p>
-          </div>
-
-          {/* service_role key */}
-          <div className="px-5 py-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <code className="text-xs font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold">service_role</code>
-                  <span className="text-[10px] font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">secret</span>
-                </div>
-                <code className="text-xs font-mono text-muted-foreground select-none">
-                  ••••••••••••••••••••••••••••
-                </code>
-                <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-                  <Eye className="h-3 w-3" /> Reveal
-                </button>
-              </div>
-              <button className="flex items-center gap-1 text-xs text-primary hover:underline">
-                <Copy className="h-3 w-3" /> Copy
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              This key has the ability to bypass Row Level Security. Never share it publicly.{' '}
-              If leaked, generate a new JWT secret immediately.{' '}
-              <span className="text-primary hover:underline cursor-pointer" onClick={() => toast.info('Prefer using Secret API keys instead.')}>
-                Prefer using Secret API keys instead.
-              </span>
-            </p>
-          </div>
-
-          {/* Disable legacy keys */}
-          <div className="px-5 py-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Disable legacy API keys</p>
-                <p className="text-xs text-muted-foreground">
-                  Make sure you are no longer using your legacy API keys before proceeding.
-                </p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" />
-                <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-500" />
-              </label>
-            </div>
-            <div className="flex justify-end">
-              <button
-                onClick={() => toast.info('JWT-based API keys will be disabled in a future update.')}
-                className="px-4 py-2 rounded-lg border border-destructive/30 text-destructive text-sm hover:bg-destructive/10 transition-colors"
-              >
-                Disable JWT-based API keys
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <LegacyKeysSection anonKey={anonKey} serviceRoleKey={serviceRoleKey} />
 
       {/* Create modals */}
       <CreateKeyModal open={showCreatePublic} onClose={() => setShowCreatePublic(false)} defaultType="PUBLIC" />

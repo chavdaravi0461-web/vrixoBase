@@ -1,4 +1,6 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateApiKeyDto } from './dto/create-api-key.dto';
@@ -7,7 +9,11 @@ import { CreateApiKeyDto } from './dto/create-api-key.dto';
 export class ApiKeysService {
   private readonly logger = new Logger(ApiKeysService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async createApiKey(projectId: string, dto: CreateApiKeyDto, userId: string) {
     const { plaintext, hash } = this.generateApiKey();
@@ -33,6 +39,10 @@ export class ApiKeysService {
   }
 
   async validateApiKey(key: string) {
+    if (key.startsWith('eyJ')) {
+      return this.validateJwtApiKey(key);
+    }
+
     const hash = this.hashKey(key);
 
     const apiKey = await this.prisma.apiKey.findFirst({
@@ -57,6 +67,35 @@ export class ApiKeysService {
       projectSlug: apiKey.project.slug,
       projectStatus: apiKey.project.status,
     };
+  }
+
+  private async validateJwtApiKey(token: string) {
+    try {
+      const secret = this.configService.get<string>('JWT_ACCESS_SECRET', 'access-secret');
+      const payload = this.jwtService.verify(token, { secret }) as any;
+
+      const role = payload.role;
+      if (role !== 'anon' && role !== 'service_role') return null;
+      if (!payload.projectId) return null;
+
+      const project = await this.prisma.project.findUnique({
+        where: { id: payload.projectId },
+        select: { id: true, slug: true, status: true },
+      });
+      if (!project) return null;
+
+      return {
+        id: `jwt_${role}`,
+        projectId: project.id,
+        type: role === 'anon' ? ('PUBLIC' as const) : ('SECRET' as const),
+        permissions: null,
+        keyName: `${role}_key`,
+        projectSlug: project.slug,
+        projectStatus: project.status,
+      };
+    } catch {
+      return null;
+    }
   }
 
   async revokeApiKey(id: string) {

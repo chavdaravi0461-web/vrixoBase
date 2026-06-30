@@ -5,6 +5,8 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TenancyService } from '../tenancy/tenancy.service';
 import { ApiKeysService } from '../api-generator/api-keys.service';
@@ -25,7 +27,30 @@ export class ProjectService {
     private readonly prisma: PrismaService,
     private readonly tenancy: TenancyService,
     private readonly apiKeysService: ApiKeysService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
+
+  getFrontendUrl(): string {
+    return this.configService.get<string>('FRONTEND_URL', 'https://vrixo-base-frontend.vercel.app');
+  }
+
+  generateProjectKeys(projectId: string): { anonKey: string; serviceRoleKey: string } {
+    const secret = this.configService.get<string>('JWT_ACCESS_SECRET', 'access-secret');
+    const issuer = this.configService.get<string>('JWT_ISSUER', 'vrixobase');
+
+    const anonKey = this.jwtService.sign(
+      { role: 'anon', projectId },
+      { secret, issuer, expiresIn: '100y' },
+    );
+
+    const serviceRoleKey = this.jwtService.sign(
+      { role: 'service_role', projectId },
+      { secret, issuer, expiresIn: '100y' },
+    );
+
+    return { anonKey, serviceRoleKey };
+  }
 
   async create(dto: CreateProjectDto, userId: string) {
     const existing = await this.prisma.project.findFirst({
@@ -103,7 +128,9 @@ export class ProjectService {
       userId,
     );
 
-    return { ...project, apiKey };
+    const { anonKey, serviceRoleKey } = this.generateProjectKeys(project.id);
+
+    return { ...project, apiKey, anonKey, serviceRoleKey };
   }
 
   private isUniqueConstraintError(error: unknown, field: string) {
@@ -129,11 +156,16 @@ export class ProjectService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return memberships.map((m: any) => ({
-      ...m.project,
-      role: m.role,
-      joinedAt: m.joinedAt,
-    }));
+    return memberships.map((m: any) => {
+      const { anonKey, serviceRoleKey } = this.generateProjectKeys(m.project.id);
+      return {
+        ...m.project,
+        anonKey,
+        serviceRoleKey,
+        role: m.role,
+        joinedAt: m.joinedAt,
+      };
+    });
   }
 
   async get(id: string, userId?: string) {
@@ -163,7 +195,8 @@ export class ProjectService {
       }
     }
 
-    return project;
+    const { anonKey, serviceRoleKey } = this.generateProjectKeys(project.id);
+    return { ...project, anonKey, serviceRoleKey };
   }
 
   async update(id: string, dto: Partial<CreateProjectDto>, userId?: string) {
