@@ -16,7 +16,7 @@ export class ApiKeysService {
       data: {
         projectId,
         name: dto.name,
-        key: hash,
+        key: plaintext,
         keyHash: hash,
         type: dto.type || 'SECRET',
         createdById: userId,
@@ -36,12 +36,7 @@ export class ApiKeysService {
     const hash = this.hashKey(key);
 
     const apiKey = await this.prisma.apiKey.findFirst({
-      where: {
-        OR: [
-          { keyHash: hash },
-          { key },
-        ],
-      },
+      where: { keyHash: hash },
       include: { project: true },
     });
 
@@ -79,6 +74,7 @@ export class ApiKeysService {
         id: true,
         name: true,
         type: true,
+        key: true,
         permissions: true,
         lastUsedAt: true,
         createdAt: true,
