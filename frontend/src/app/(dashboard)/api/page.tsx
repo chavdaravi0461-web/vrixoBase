@@ -1,28 +1,18 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
-  Key, Plus, Copy, Check, Eye, EyeOff, Trash2, ChevronDown, ChevronRight, Code,
-  ExternalLink, Server, Database, Loader2, AlertTriangle, Shield,
-  BookOpen, MessageSquare, HelpCircle, Send,
+  Key, Plus, Copy, Check, Eye, EyeOff, Trash2, AlertTriangle, Shield,
+  BookOpen, MessageSquare,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { PageLoading } from '@/components/common/loading-spinner';
-import { CodeBlock, generateCurl, generateFetch, generatePython } from '@/components/common/code-block';
 import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { cn, formatDateTime } from '@/lib/utils';
 import { useApiKeys, useCreateApiKey, useRevokeApiKey } from '@/hooks/use-api-keys';
-import { useTables } from '@/hooks/use-database';
 import { useProjectStore } from '@/stores/project-store';
 import type { ApiKey } from '@/lib/api/api-keys';
-
-const methodColors: Record<string, string> = {
-  GET: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-  POST: 'text-brand-400 bg-brand-500/10 border-brand-500/20',
-  PATCH: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
-  DELETE: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
-};
 
 function maskKey(key: string): string {
   if (key.length <= 12) return key;
@@ -252,7 +242,6 @@ export default function ApiPage() {
   const projectId = useProjectStore((s) => s.currentProject?.id);
   const { data: keysData, isLoading, refetch } = useApiKeys(projectId ?? '');
   const revokeKey = useRevokeApiKey(projectId ?? '');
-  const { data: dbTables } = useTables(projectId ?? '');
 
   const keys = keysData || [];
   const publicKeys = keys.filter((k) => k.type === 'PUBLIC');
@@ -262,80 +251,12 @@ export default function ApiPage() {
   const [showCreateSecret, setShowCreateSecret] = useState(false);
   const [showRevokeDialog, setShowRevokeDialog] = useState<string | null>(null);
 
-  const [playgroundTab, setPlaygroundTab] = useState<'curl' | 'fetch' | 'python'>('curl');
-  const [method, setMethod] = useState<'GET' | 'POST' | 'PATCH' | 'DELETE'>('GET');
-  const [endpointUrl, setEndpointUrl] = useState('');
-  const [requestHeaders, setRequestHeaders] = useState('{\n  "Content-Type": "application/json"\n}');
-  const [requestBody, setRequestBody] = useState('');
-  const [response, setResponse] = useState('');
-  const [sending, setSending] = useState(false);
-  const [expandedEndpoint, setExpandedEndpoint] = useState<string | null>(null);
-
   const handleRevokeKey = (id: string) => {
     revokeKey.mutate(id, {
       onSuccess: () => { toast.success('API key revoked'); setShowRevokeDialog(null); },
       onError: (err) => toast.error(err.message),
     });
   };
-
-  const handleSendRequest = async () => {
-    if (!endpointUrl) return;
-    setSending(true);
-    setResponse('');
-
-    try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || '';
-      const token = typeof window !== 'undefined' ? localStorage.getItem('vrixo_access_token') : null;
-
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const parsedBody = requestBody ? JSON.parse(requestBody) : undefined;
-
-      const startTime = performance.now();
-      const res = await fetch(`${apiBase}${endpointUrl.startsWith('/') ? endpointUrl : `/${endpointUrl}`}`, {
-        method,
-        headers,
-        body: method !== 'GET' && method !== 'DELETE' && parsedBody ? JSON.stringify(parsedBody) : undefined,
-      });
-      const duration = (performance.now() - startTime).toFixed(1);
-
-      const body = await res.json().catch(() => null);
-
-      const respHeaders: Record<string, string> = {};
-      res.headers.forEach((v, k) => { respHeaders[k] = v; });
-
-      setResponse(JSON.stringify({
-        status: res.status,
-        statusText: res.statusText,
-        duration: `${duration}ms`,
-        headers: respHeaders,
-        data: body,
-      }, null, 2));
-    } catch (err: any) {
-      setResponse(JSON.stringify({
-        status: 0,
-        statusText: 'Network Error',
-        error: err.message,
-      }, null, 2));
-    }
-
-    setSending(false);
-  };
-
-  const endpoints = useMemo(() => {
-    if (!dbTables || dbTables.length === 0) return [];
-    return dbTables.map((t: any) => ({
-      table: t.name,
-      endpoints: [
-        { method: 'GET' as const, path: `/api/v1/rest/v1/${t.name}`, description: `List all ${t.name}` },
-        { method: 'GET' as const, path: `/api/v1/rest/v1/${t.name}/:id`, description: `Get ${t.name} by ID` },
-        { method: 'POST' as const, path: `/api/v1/rest/v1/${t.name}`, description: `Create a ${t.name}` },
-        { method: 'PATCH' as const, path: `/api/v1/rest/v1/${t.name}/:id`, description: `Update ${t.name}` },
-        { method: 'DELETE' as const, path: `/api/v1/rest/v1/${t.name}/:id`, description: `Delete ${t.name}` },
-      ],
-    }));
-  }, [dbTables]);
 
   if (!projectId) {
     return (
@@ -582,143 +503,7 @@ export default function ApiPage() {
         variant="destructive"
       />
 
-      {/* Divider before playground */}
-      <hr className="border-border/60" />
 
-      {/* REST Playground */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold tracking-tight">REST Playground</h2>
-
-        <div className="flex gap-2">
-          <select
-            value={method}
-            onChange={(e) => setMethod(e.target.value as typeof method)}
-            className="px-3 py-2 rounded-lg border border-border bg-card text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-brand-500"
-          >
-            {['GET', 'POST', 'PATCH', 'DELETE'].map((m) => (
-              <option key={m} value={m}>{m}</option>
-            ))}
-          </select>
-          <input
-            type="text"
-            value={endpointUrl}
-            onChange={(e) => setEndpointUrl(e.target.value)}
-            placeholder="/api/v1/rest/v1/users"
-            className="flex-1 px-3 py-2 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-brand-500 font-mono"
-          />
-          <button
-            onClick={handleSendRequest}
-            disabled={sending || !endpointUrl}
-            className="px-4 py-2 rounded-lg bg-brand-500 hover:bg-brand-600 disabled:opacity-40 text-white text-sm font-medium flex items-center gap-2 transition-colors"
-          >
-            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            Send
-          </button>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Headers</label>
-            <textarea
-              value={requestHeaders}
-              onChange={(e) => setRequestHeaders(e.target.value)}
-              rows={4}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-[#0a0a0f] text-xs font-mono text-gray-300 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Body</label>
-            <textarea
-              value={requestBody}
-              onChange={(e) => setRequestBody(e.target.value)}
-              rows={4}
-              placeholder='{"key": "value"}'
-              className="w-full px-3 py-2 rounded-lg border border-border bg-[#0a0a0f] text-xs font-mono text-gray-300 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none placeholder:text-muted-foreground/50"
-            />
-          </div>
-        </div>
-
-        {response && (
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Response</label>
-            <CodeBlock code={response} language="json" title="Response" maxHeight="300px" />
-          </div>
-        )}
-      </div>
-
-      {/* Code Snippets */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold tracking-tight">Code Snippets</h2>
-        <div className="flex gap-1 p-1 rounded-lg bg-muted/50 w-fit">
-          {(['curl', 'fetch', 'python'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setPlaygroundTab(tab)}
-              className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
-                playgroundTab === tab ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {tab === 'curl' ? 'cURL' : tab === 'fetch' ? 'JavaScript' : 'Python'}
-            </button>
-          ))}
-        </div>
-        <CodeBlock
-          code={
-            playgroundTab === 'curl'
-              ? generateCurl(endpointUrl || '/api/v1/rest/v1/users', method, JSON.parse(requestHeaders || '{}'), requestBody)
-              : playgroundTab === 'fetch'
-              ? generateFetch(endpointUrl || '/api/v1/rest/v1/users', method, JSON.parse(requestHeaders || '{}'), requestBody)
-              : generatePython(endpointUrl || '/api/v1/rest/v1/users', method, JSON.parse(requestHeaders || '{}'), requestBody)
-          }
-          language={playgroundTab === 'curl' ? 'bash' : playgroundTab === 'fetch' ? 'javascript' : 'python'}
-          title="Code snippet"
-        />
-      </div>
-
-      {/* API Endpoints */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold tracking-tight">API Endpoints</h2>
-        <div className="rounded-xl border border-border bg-card">
-          <div className="divide-y divide-border">
-            {endpoints.length === 0 ? (
-              <div className="p-8 text-center text-sm text-muted-foreground">
-                <Database className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                <p>No tables found. Create tables in Database to see API endpoints.</p>
-              </div>
-            ) : endpoints.map((group) => (
-              <div key={group.table}>
-                <button
-                  onClick={() => setExpandedEndpoint(expandedEndpoint === group.table ? null : group.table)}
-                  className="flex items-center gap-2 w-full px-5 py-3 text-left hover:bg-muted/20 transition-colors"
-                >
-                  {expandedEndpoint === group.table ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-                  <Server className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">{group.table}</span>
-                  <span className="ml-auto text-xs text-muted-foreground">{group.endpoints.length} endpoints</span>
-                </button>
-                <AnimatePresence>
-                  {expandedEndpoint === group.table && (
-                    <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
-                      <div className="px-5 pb-3 space-y-2">
-                        {group.endpoints.map((ep: any) => (
-                          <div key={ep.path} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/20 transition-colors">
-                            <span className={cn('px-2 py-0.5 rounded text-[10px] font-mono font-semibold border', methodColors[ep.method])}>
-                              {ep.method}
-                            </span>
-                            <code className="text-xs font-mono text-muted-foreground truncate">{ep.path}</code>
-                            <span className="text-xs text-muted-foreground ml-auto hidden sm:block">{ep.description}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
