@@ -427,22 +427,39 @@ export default function ApiPage() {
         </a>
       </div>
 
-      {/* Project URL */}
+      {/* Project URL + API base */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">Project URL</span>
-            <code className="text-xs font-mono text-foreground bg-muted/50 px-2 py-1 rounded">
-              {vrixobaseUrl}
-            </code>
+        <div className="divide-y divide-border">
+          <div className="flex items-center justify-between px-5 py-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">Project URL</span>
+              <code className="text-xs font-mono text-foreground bg-muted/50 px-2 py-1 rounded">
+                {vrixobaseUrl}
+              </code>
+            </div>
+            <button
+              onClick={handleCopyUrl}
+              className="flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              {urlCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+              {urlCopied ? 'Copied' : 'Copy'}
+            </button>
           </div>
-          <button
-            onClick={handleCopyUrl}
-            className="flex items-center gap-1 text-xs text-primary hover:underline"
-          >
-            {urlCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-            {urlCopied ? 'Copied' : 'Copy'}
-          </button>
+          <div className="px-5 py-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="font-medium">API Base URL:</span>
+              <code className="font-mono text-foreground">{vrixobaseUrl}/api/rest/v1</code>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`${vrixobaseUrl}/api/rest/v1`);
+                  toast.success('API base URL copied');
+                }}
+                className="p-1 hover:bg-muted rounded transition-colors"
+              >
+                <Copy className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

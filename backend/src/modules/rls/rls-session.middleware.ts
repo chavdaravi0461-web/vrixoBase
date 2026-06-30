@@ -26,7 +26,7 @@ export class RlsSessionMiddleware implements NestMiddleware {
   async use(req: Request, _res: Response, next: NextFunction): Promise<void> {
     try {
       const authHeader = req.headers['authorization'] as string | undefined;
-      const apiKeyHeader = req.headers['x-api-key'] as string | undefined;
+      const apiKeyHeader = (req.headers['x-api-key'] || req.headers['apikey']) as string | undefined;
       const projectIdParam =
         req.params?.projectId ||
         (req.query?.projectId as string) ||

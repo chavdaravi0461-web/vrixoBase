@@ -38,8 +38,8 @@ export class ApiKeyGuard implements CanActivate {
   }
 
   private extractApiKey(request: any): string | null {
-    const header = request.headers?.['x-api-key'];
-    if (header) return header;
+    const apiKeyHeader = request.headers?.['x-api-key'] || request.headers?.['apikey'];
+    if (apiKeyHeader) return apiKeyHeader;
 
     const auth = request.headers?.['authorization'];
     if (auth && auth.startsWith('Bearer ')) {
