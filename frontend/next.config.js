@@ -8,7 +8,6 @@ const nextConfig = {
       { protocol: 'http', hostname: 'minio', pathname: '/**' },
       { protocol: 'https', hostname: 'minio', pathname: '/**' },
       { protocol: 'https', hostname: '**.vercel.app', pathname: '/**' },
-      { protocol: 'https', hostname: '**.pages.dev', pathname: '/**' },
     ],
   },
   async headers() {
@@ -42,15 +41,6 @@ const nextConfig = {
 // Vercel sets its own output mode — do NOT set it here
 if (process.env.NEXT_STANDALONE) {
   nextConfig.output = 'standalone';
-}
-
-// Cloudflare Pages (CF_PAGES=1) — static export, no server features
-if (process.env.CF_PAGES) {
-  nextConfig.output = 'export';
-  nextConfig.images = { unoptimized: true };
-  nextConfig.skipTrailingSlashRedirect = true;
-  // Headers are handled by _headers file in Cloudflare, not next config
-  delete nextConfig.headers;
 }
 
 module.exports = nextConfig;

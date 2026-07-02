@@ -134,7 +134,7 @@ function SidebarContent({
       </div>
 
       <ScrollArea className="flex-1 px-2 py-3">
-        <nav aria-label="Main" className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
             const Icon = item.icon;
@@ -143,10 +143,9 @@ function SidebarContent({
               return (
                 <Tooltip key={item.href} delayDuration={0}>
                   <TooltipTrigger asChild>
-                     <Link
+                    <Link
                       href={item.href}
                       onClick={onNavClick}
-                      aria-current={isActive ? 'page' : undefined}
                       className={cn(
                         'flex items-center justify-center h-9 w-9 rounded-lg mx-auto transition-colors',
                         isActive
@@ -169,7 +168,6 @@ function SidebarContent({
                 key={item.href}
                 href={item.href}
                 onClick={onNavClick}
-                aria-current={isActive ? 'page' : undefined}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors group relative',
                   isActive
